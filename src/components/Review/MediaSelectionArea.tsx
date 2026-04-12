@@ -234,7 +234,12 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
       const newSelections = currentEntry.selections.map((s: any) =>
         s.id === mediaId ? { ...s, rating: val } : s
       )
-      updateEntry(currentIndex, { selections: newSelections, isManual: true })
+      const updates: any = { selections: newSelections, isManual: true }
+      // If there's only one selection, keep entry rating in sync
+      if (newSelections.length === 1) {
+        updates.rating = val
+      }
+      updateEntry(currentIndex, updates)
     },
     [currentEntry.selections, currentIndex, updateEntry]
   )
@@ -336,7 +341,11 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
               {isEditingSearch ? (
                 <Input
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    const newVal = e.target.value
+                    setSearchQuery(newVal)
+                    updateEntry(currentIndex, { name: newVal })
+                  }}
                   className="h-10 text-base font-bold sm:h-11"
                   autoFocus
                   onBlur={() => setIsEditingSearch(false)}
@@ -406,9 +415,17 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
               </span>
               <NumberInput
                 value={currentEntry.rating}
-                onChange={(val: number) =>
-                  updateEntry(currentIndex, { rating: val, isManual: true })
-                }
+                onChange={(val: number) => {
+                  const newSelections = currentEntry.selections.map((s: any) => ({
+                    ...s,
+                    rating: val,
+                  }))
+                  updateEntry(currentIndex, {
+                    rating: val,
+                    selections: newSelections,
+                    isManual: true,
+                  })
+                }}
               />
               <span className="text-xs font-black opacity-70 sm:text-sm">
                 / 10

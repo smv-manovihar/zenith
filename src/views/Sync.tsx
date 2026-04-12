@@ -373,7 +373,7 @@ const Sync: FC = () => {
     0
   )
   const hasMissingScores = entries.some(
-    (e) => e.selections.length > 0 && e.rating === 0
+    (e) => e.selections.length > 0 && e.selections.some((s) => s.rating === 0)
   )
   const errorCount = entries.reduce(
     (acc, e) => acc + e.selections.filter((s) => s.status === "error").length,

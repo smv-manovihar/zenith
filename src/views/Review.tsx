@@ -64,7 +64,7 @@ const Review: FC = () => {
   )
 
   const entriesWithMissingScores = entries.filter(
-    (e) => e.selections.length > 0 && e.rating === 0
+    (e) => e.selections.length > 0 && e.selections.some((s) => s.rating === 0)
   ).length
 
   const resolvedCount = entries.filter((e) => e.selections.length > 0).length
