@@ -132,23 +132,36 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     if (token && !user) {
+      const controller = new AbortController()
       const fetchUser = async () => {
         try {
-          const response = await queryAniList(GET_VIEWER_QUERY, {}, token)
+          const response = await queryAniList(
+            GET_VIEWER_QUERY,
+            {},
+            token,
+            3,
+            controller.signal
+          )
           if (response.data?.Viewer) {
             const userData = {
               name: response.data.Viewer.name,
               avatar: response.data.Viewer.avatar.large,
             }
             setUser(userData)
-            localStorage.setItem("anilist_updator_user", JSON.stringify(userData))
+            localStorage.setItem(
+              "anilist_updator_user",
+              JSON.stringify(userData)
+            )
           }
-        } catch (error) {
+        } catch (error: any) {
+          if (error.name === "AbortError" || error.message === "canceled")
+            return
           console.error("Failed to fetch user data:", error)
           toast.error("Failed to fetch AniList profile")
         }
       }
       fetchUser()
+      return () => controller.abort()
     }
   }, [token, user])
 

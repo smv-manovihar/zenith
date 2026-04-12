@@ -44,7 +44,8 @@ export const queryAniList = async (
   query: string,
   variables: any = {},
   token?: string,
-  retries = 3
+  retries = 3,
+  signal?: AbortSignal
 ): Promise<AniListResponse> => {
   const reqHeaders: any = {
     "Content-Type": "application/json",
@@ -62,7 +63,10 @@ export const queryAniList = async (
         query,
         variables,
       },
-      { headers: reqHeaders }
+      { 
+        headers: reqHeaders,
+        signal 
+      }
     )
 
     // Return GraphQL data alongside headers
@@ -72,15 +76,31 @@ export const queryAniList = async (
       headers: response.headers
     };
   } catch (error: any) {
+    // If specifically aborted, throw immediately
+    if (axios.isCancel(error) || error.name === 'AbortError' || signal?.aborted) {
+      throw error;
+    }
+
     const headers = error.response?.headers || {};
     rateLimiter.update(headers);
 
     // Handle AniList Rate Limits (429)
     if (error.response?.status === 429 && retries > 0) {
+      if (signal?.aborted) throw new Error('Aborted');
+
       const waitTime = rateLimiter.waitTime || 5000;
       console.warn(`Rate limited. Waiting ${waitTime}ms (Reset: ${rateLimiter.resetAt})...`)
-      await new Promise((resolve) => setTimeout(resolve, waitTime))
-      return queryAniList(query, variables, token, retries - 1)
+      
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(resolve, waitTime);
+        signal?.addEventListener('abort', () => {
+          clearTimeout(timeout);
+          reject(new Error('Aborted during rate limit wait'));
+        }, { once: true });
+      })
+
+      if (signal?.aborted) throw new Error('Aborted');
+      return queryAniList(query, variables, token, retries - 1, signal)
     }
     throw error
   }

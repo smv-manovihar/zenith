@@ -24,6 +24,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useDebounce } from "@/hooks/useDebounce"
 
 interface MediaSelectionAreaProps {
   currentEntry: any
@@ -47,6 +48,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
   const [expandedMediaIds, setExpandedMediaIds] = useState<Set<number>>(
     new Set()
   )
+  const debouncedSearchQuery = useDebounce(searchQuery, 500)
 
   useEffect(() => {
     if (currentEntry) {
@@ -56,9 +58,16 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
   }, [currentIndex, currentEntry?.name])
 
   const { data, isLoading } = useQuery({
-    queryKey: ["animeSearch", searchQuery],
-    queryFn: () => queryAniList(SEARCH_ANIME_QUERY, { search: searchQuery }),
-    enabled: !!searchQuery,
+    queryKey: ["animeSearch", debouncedSearchQuery],
+    queryFn: ({ signal }) =>
+      queryAniList(
+        SEARCH_ANIME_QUERY,
+        { search: debouncedSearchQuery },
+        undefined,
+        3,
+        signal
+      ),
+    enabled: !!debouncedSearchQuery,
   })
 
   const searchResults = data?.data?.Page?.media || []
@@ -70,10 +79,10 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
       currentEntry &&
       currentEntry.selections.length === 0 &&
       !currentEntry.isManual &&
-      normalizeTitle(searchQuery) === normalizeTitle(currentEntry.name)
+      normalizeTitle(debouncedSearchQuery) === normalizeTitle(currentEntry.name)
     ) {
-      const normalizedQuery = normalizeTitle(searchQuery)
-      const lowerQuery = searchQuery.toLowerCase().trim()
+      const normalizedQuery = normalizeTitle(debouncedSearchQuery)
+      const lowerQuery = debouncedSearchQuery.toLowerCase().trim()
 
       const perfectMatches = searchResults.filter((media: any) => {
         const titles = [
@@ -113,7 +122,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
     searchResults,
     currentIndex,
     currentEntry,
-    searchQuery,
+    debouncedSearchQuery,
     updateEntry,
     isLoading,
   ])
