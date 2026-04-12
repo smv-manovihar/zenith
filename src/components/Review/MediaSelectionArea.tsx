@@ -42,6 +42,7 @@ interface MediaSelectionAreaProps {
   onViewDetails: (media: any) => void
   entries: any[]
   onSelectEntry: (index: number) => void
+  onClearFilters: () => void
 }
 
 const FORMATS = [
@@ -94,6 +95,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
   onViewDetails,
   entries,
   onSelectEntry,
+  onClearFilters,
 }) => {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedFormats, setSelectedFormats] = useState<string[]>(() => {
@@ -432,6 +434,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
                     updateEntry(idx, { rating: val })
                   }
                   isMobile
+                  onClearFilters={onClearFilters}
                 />
               </div>
 

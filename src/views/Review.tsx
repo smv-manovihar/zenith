@@ -21,18 +21,65 @@ const Review: FC = () => {
   const { entries, updateEntry, token, lastVisitedIndex, setLastVisitedIndex } =
     useProgress()
   const selectionAreaRef = useRef<HTMLDivElement>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [showMissingOnly, setShowMissingOnly] = useState(
+    searchParams.get("filter") === "missing"
+  )
   const [currentIndex, setCurrentIndex] = useState(() => {
+    const urlId = searchParams.get("id")
+    if (urlId) {
+      const idx = entries.findIndex((e) => e.id === urlId)
+      if (idx !== -1) return idx
+    }
+
+    const urlIndex = searchParams.get("index")
+    if (urlIndex !== null) {
+      const idx = parseInt(urlIndex, 10)
+      if (!isNaN(idx) && idx >= 0 && idx < entries.length) return idx
+    }
     return lastVisitedIndex >= 0 && lastVisitedIndex < entries.length
       ? lastVisitedIndex
       : 0
   })
+  const [sidebarSearchQuery, setSidebarSearchQuery] = useState(
+    searchParams.get("q") || ""
+  )
   const [selectedDetailsMedia, setSelectedDetailsMedia] = useState<any>(null)
 
-  const [searchParams] = useSearchParams()
-  const [showMissingOnly, setShowMissingOnly] = useState(
-    searchParams.get("filter") === "missing"
-  )
-  const [sidebarSearchQuery, setSidebarSearchQuery] = useState("")
+  // Sync state to URL
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams)
+    params.set("index", currentIndex.toString())
+
+    const currentEntry = entries[currentIndex]
+    if (currentEntry?.id) {
+      params.set("id", currentEntry.id)
+    }
+
+    if (showMissingOnly) {
+      params.set("filter", "missing")
+    } else {
+      params.delete("filter")
+    }
+
+    if (sidebarSearchQuery) {
+      params.set("q", sidebarSearchQuery)
+    } else {
+      params.delete("q")
+    }
+
+    // Only update if something changed
+    if (params.toString() !== searchParams.toString()) {
+      setSearchParams(params, { replace: true })
+    }
+  }, [
+    currentIndex,
+    showMissingOnly,
+    sidebarSearchQuery,
+    setSearchParams,
+    searchParams,
+    entries,
+  ])
 
   const navigate = useNavigate()
 
@@ -80,6 +127,11 @@ const Review: FC = () => {
   const entriesWithMissingScores = entries.filter(
     (e) => e.selections.length > 0 && e.selections.some((s) => s.rating === 0)
   ).length
+
+  const handleClearFilters = useCallback(() => {
+    setSidebarSearchQuery("")
+    setShowMissingOnly(false)
+  }, [])
 
   const filteredEntries = useMemo(() => {
     return entries
@@ -134,6 +186,7 @@ const Review: FC = () => {
             searchQuery={sidebarSearchQuery}
             onSearchChange={setSidebarSearchQuery}
             isFilterActive={showMissingOnly}
+            onClearFilters={handleClearFilters}
           />
         </div>
 
@@ -146,6 +199,7 @@ const Review: FC = () => {
             onViewDetails={setSelectedDetailsMedia}
             entries={entries}
             onSelectEntry={setCurrentIndex}
+            onClearFilters={handleClearFilters}
           />
         </div>
       </div>

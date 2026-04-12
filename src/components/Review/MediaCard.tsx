@@ -255,6 +255,7 @@ export const MediaCard = memo<MediaCardProps>(
                         <div className="flex items-center gap-1">
                           <NumberInput
                             value={progress || 0}
+                            step={1}
                             onChange={(val) =>
                               onUpdateProgress?.(media.id, val)
                             }

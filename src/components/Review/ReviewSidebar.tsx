@@ -27,6 +27,7 @@ interface ReviewSidebarProps {
   searchQuery?: string
   onSearchChange?: (val: string) => void
   isFilterActive?: boolean
+  onClearFilters?: () => void
 }
 
 type SidebarRowProps = {
@@ -69,6 +70,7 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
   searchQuery = "",
   onSearchChange,
   isFilterActive = false,
+  onClearFilters,
 }) => {
   // 1. Create the list reference
   const listRef = useRef<any>(null)
@@ -99,11 +101,14 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
       // If it's a new instance (mount/drawer open)
       if (node !== lastListInstance.current) {
         if (localIndex !== -1 && localIndex < entries.length) {
-          node.scrollToRow({
-            index: localIndex,
-            align: "center",
-            behavior: "auto",
-          })
+          // Add a small delay for drawer/animation layouts
+          setTimeout(() => {
+            node.scrollToRow({
+              index: localIndex,
+              align: "center",
+              behavior: "auto",
+            })
+          }, 50)
         }
         lastListInstance.current = node
         setHasScrolledInitial(true)
@@ -190,10 +195,7 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
                   variant="link"
                   size="sm"
                   className="mt-1 h-auto p-0 text-[10px] font-bold text-primary"
-                  onClick={() => {
-                    onSearchChange?.("")
-                    if (isFilterActive) onSelectEntry(-1) // Signal to clear missing filter if needed
-                  }}
+                  onClick={onClearFilters}
                 >
                   Clear all filters
                 </Button>
@@ -267,12 +269,9 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
                 variant="outline"
                 size="sm"
                 className="mt-6 rounded-none border-primary/20 font-black tracking-tighter uppercase"
-                onClick={() => {
-                  onSearchChange?.("")
-                  // Parent component handles showMissingOnly via props updated in Review.tsx
-                }}
+                onClick={onClearFilters}
               >
-                Clear search query
+                Clear all filters
               </Button>
             </div>
           ) : (

@@ -15,6 +15,7 @@ interface NumberInputProps {
   max?: number
   step?: number
   className?: string
+  disabled?: boolean
 }
 
 export const NumberInput: FC<NumberInputProps> = ({
@@ -24,6 +25,7 @@ export const NumberInput: FC<NumberInputProps> = ({
   max = 10,
   step = 0.5,
   className = "",
+  disabled = false,
 }) => {
   const [localValue, setLocalValue] = useState(value.toString())
 
@@ -82,7 +84,7 @@ export const NumberInput: FC<NumberInputProps> = ({
         size="icon"
         className="h-6 w-6 rounded-none transition-colors hover:bg-primary/20 hover:text-primary"
         onClick={handleDecrement}
-        disabled={value <= min}
+        disabled={disabled || value <= min}
       >
         <Minus className="h-3 w-3" />
       </Button>
@@ -97,7 +99,8 @@ export const NumberInput: FC<NumberInputProps> = ({
         onBlur={handleBlur}
         onFocus={handleFocus}
         onClick={(e) => e.stopPropagation()}
-        className="w-10 [appearance:textfield] border-none bg-transparent p-0 text-center text-sm font-black focus:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        disabled={disabled}
+        className="w-10 [appearance:textfield] border-none bg-transparent p-0 text-center text-sm font-black focus:ring-0 disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
 
       <Button
@@ -105,7 +108,7 @@ export const NumberInput: FC<NumberInputProps> = ({
         size="icon"
         className="h-6 w-6 rounded-none transition-colors hover:bg-primary/20 hover:text-primary"
         onClick={handleIncrement}
-        disabled={value >= max}
+        disabled={disabled || value >= max}
       >
         <Plus className="h-3 w-3" />
       </Button>

@@ -68,42 +68,43 @@ export const Navbar: React.FC = () => {
 
           {/* Row 1 - Desktop Navigation Steps */}
           {token && (
-            <div className="hidden flex-1 items-center justify-center gap-8 md:flex">
+            <div className="hidden flex-1 items-center justify-center gap-6 md:flex">
               {steps.map((step, index) => {
                 const isActive = location.pathname === step.path
                 const isPast =
                   steps.findIndex((s) => s.path === location.pathname) > index
 
                 return (
-                  <Link
-                    key={step.path}
-                    to={step.path}
-                    className={cn(
-                      "flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary",
-                      isActive ? "text-primary" : "text-muted-foreground"
-                    )}
-                  >
-                    <span
+                  <React.Fragment key={step.path}>
+                    <Link
+                      to={step.path}
                       className={cn(
-                        "flex h-6 w-6 items-center justify-center rounded-none border text-[10px]",
-                        isActive
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : isPast
-                            ? "border-primary/50 bg-primary/20 text-primary"
-                            : "border-muted-foreground/30"
+                        "flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary",
+                        isActive ? "text-primary" : "text-muted-foreground"
                       )}
                     >
-                      {isPast ? (
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                      ) : (
-                        index + 1
-                      )}
-                    </span>
-                    <span className="whitespace-nowrap">{step.name}</span>
+                      <span
+                        className={cn(
+                          "flex h-6 w-6 items-center justify-center rounded-none border text-[10px]",
+                          isActive
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : isPast
+                              ? "border-primary/50 bg-primary/20 text-primary"
+                              : "border-muted-foreground/30"
+                        )}
+                      >
+                        {isPast ? (
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        ) : (
+                          index + 1
+                        )}
+                      </span>
+                      <span className="whitespace-nowrap">{step.name}</span>
+                    </Link>
                     {index < steps.length - 1 && (
-                      <ArrowRight className="ml-2 h-4 w-4 text-muted-foreground/30" />
+                      <ArrowRight className="h-4 w-4 text-muted-foreground/30" />
                     )}
-                  </Link>
+                  </React.Fragment>
                 )
               })}
             </div>
@@ -191,35 +192,36 @@ export const Navbar: React.FC = () => {
                   steps.findIndex((s) => s.path === location.pathname) > index
 
                 return (
-                  <Link
-                    key={step.path}
-                    to={step.path}
-                    className={cn(
-                      "flex shrink-0 items-center gap-2 text-xs font-medium transition-colors hover:text-primary",
-                      isActive ? "text-primary" : "text-muted-foreground"
-                    )}
-                  >
-                    <span
+                  <React.Fragment key={step.path}>
+                    <Link
+                      to={step.path}
                       className={cn(
-                        "flex h-5 w-5 items-center justify-center rounded-none border text-[9px]",
-                        isActive
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : isPast
-                            ? "border-primary/50 bg-primary/20 text-primary"
-                            : "border-muted-foreground/30"
+                        "flex shrink-0 items-center gap-2 text-xs font-medium transition-colors hover:text-primary",
+                        isActive ? "text-primary" : "text-muted-foreground"
                       )}
                     >
-                      {isPast ? (
-                        <CheckCircle2 className="h-3 w-3" />
-                      ) : (
-                        index + 1
-                      )}
-                    </span>
-                    <span className="whitespace-nowrap">{step.name}</span>
+                      <span
+                        className={cn(
+                          "flex h-5 w-5 items-center justify-center rounded-none border text-[9px]",
+                          isActive
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : isPast
+                              ? "border-primary/50 bg-primary/20 text-primary"
+                              : "border-muted-foreground/30"
+                        )}
+                      >
+                        {isPast ? (
+                          <CheckCircle2 className="h-3 w-3" />
+                        ) : (
+                          index + 1
+                        )}
+                      </span>
+                      <span className="whitespace-nowrap">{step.name}</span>
+                    </Link>
                     {index < steps.length - 1 && (
-                      <ArrowRight className="h-3 w-3 text-muted-foreground/30" />
+                      <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/30" />
                     )}
-                  </Link>
+                  </React.Fragment>
                 )
               })}
             </div>

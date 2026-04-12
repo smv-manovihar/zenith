@@ -73,6 +73,7 @@ const Import: FC = () => {
         !isNaN(parseFloat(row[ratingIdx]))
       ) {
         newEntries.push({
+          id: crypto.randomUUID(),
           originalLine: lines[i],
           name: row[nameIdx],
           rating: parseFloat(row[ratingIdx]),
@@ -168,6 +169,7 @@ const Import: FC = () => {
         const rating = parseFloat(ratingStr)
 
         finalEntries.push({
+          id: crypto.randomUUID(),
           originalLine: line,
           name,
           rating: isNaN(rating) ? 0 : rating > 10 ? rating / 10 : rating,
@@ -184,6 +186,7 @@ const Import: FC = () => {
 
         if (hasListMarker && cleanedLine.length > 2 && !isUrl && !isProse) {
           finalEntries.push({
+            id: crypto.randomUUID(),
             originalLine: line,
             name: cleanedLine,
             rating: 0,

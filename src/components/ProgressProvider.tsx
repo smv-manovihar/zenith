@@ -40,9 +40,14 @@ export interface Selection {
 export interface UserData {
   name: string
   avatar: string
+  scoreFormat: string
+  mediaListOptions: {
+    scoreFormat: string
+  }
 }
 
 export interface AnimeEntry {
+  id: string
   originalLine: string
   name: string
   rating: number
@@ -106,6 +111,7 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
 
         return {
           ...entry,
+          id: entry.id || crypto.randomUUID(),
           selections,
           status: entry.status || "pending",
         }
@@ -146,6 +152,10 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
             const userData = {
               name: response.data.Viewer.name,
               avatar: response.data.Viewer.avatar.large,
+              scoreFormat: response.data.Viewer.mediaListOptions.scoreFormat,
+              mediaListOptions: {
+                scoreFormat: response.data.Viewer.mediaListOptions.scoreFormat,
+              },
             }
             setUser(userData)
             localStorage.setItem(

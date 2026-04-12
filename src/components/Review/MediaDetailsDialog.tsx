@@ -24,6 +24,7 @@ export const MediaDetailsDialog: FC<MediaDetailsDialogProps> = ({
     >
       <DialogContent
         className="flex max-h-[85vh] flex-col overflow-hidden border-primary/10 p-0 shadow-2xl transition-all duration-300 sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl"
+        aria-describedby={undefined}
       >
         {media && (
           <>
