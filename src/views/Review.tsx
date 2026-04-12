@@ -11,11 +11,13 @@ import { ReviewNavigation } from "@/components/Review/ReviewNavigation"
 import { MediaDetailsDialog } from "@/components/Review/MediaDetailsDialog"
 
 const Review: FC = () => {
-  const { entries, updateEntry, token } = useProgress()
+  const { entries, updateEntry, token, lastVisitedIndex, setLastVisitedIndex } =
+    useProgress()
   const selectionAreaRef = useRef<HTMLDivElement>(null)
   const [currentIndex, setCurrentIndex] = useState(() => {
-    const firstUnresolved = entries.findIndex((e) => e.selections.length === 0)
-    return firstUnresolved === -1 ? 0 : firstUnresolved
+    return lastVisitedIndex >= 0 && lastVisitedIndex < entries.length
+      ? lastVisitedIndex
+      : 0
   })
   const [selectedDetailsMedia, setSelectedDetailsMedia] = useState<any>(null)
   const navigate = useNavigate()
@@ -26,13 +28,17 @@ const Review: FC = () => {
     }
   }, [token, navigate])
 
-  // Scroll to selection area when active entry changes
+  // Scroll to selection area and update last visited index when active entry changes
   useEffect(() => {
     if (selectionAreaRef.current) {
-      const top = selectionAreaRef.current.getBoundingClientRect().top + window.scrollY - 100
+      const top =
+        selectionAreaRef.current.getBoundingClientRect().top +
+        window.scrollY -
+        100
       window.scrollTo({ top, behavior: "smooth" })
     }
-  }, [currentIndex])
+    setLastVisitedIndex(currentIndex)
+  }, [currentIndex, setLastVisitedIndex])
 
   const currentEntry = entries[currentIndex]
 

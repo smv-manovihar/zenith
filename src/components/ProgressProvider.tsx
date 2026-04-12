@@ -63,6 +63,8 @@ interface ProgressContextType {
   ) => void
   token: string | null
   setToken: (token: string | null) => void
+  lastVisitedIndex: number
+  setLastVisitedIndex: (index: number) => void
   user: UserData | null
   clientId: string
 }
@@ -123,6 +125,11 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
   })
   const clientId = import.meta.env.VITE_ANILIST_CLIENT_ID || ""
 
+  const [lastVisitedIndex, setLastVisitedIndexState] = useState<number>(() => {
+    const saved = localStorage.getItem("anilist_updator_last_index")
+    return saved ? parseInt(saved, 10) : 0
+  })
+
   useEffect(() => {
     if (token && !user) {
       const fetchUser = async () => {
@@ -144,6 +151,13 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
       fetchUser()
     }
   }, [token, user])
+
+  useEffect(() => {
+    localStorage.setItem(
+      "anilist_updator_last_index",
+      lastVisitedIndex.toString()
+    )
+  }, [lastVisitedIndex])
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -170,6 +184,11 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
       isManual: e.isManual ?? false,
     }))
     setEntriesState(initializedEntries)
+    setLastVisitedIndexState(0)
+  }, [])
+
+  const setLastVisitedIndex = useCallback((index: number) => {
+    setLastVisitedIndexState(index)
   }, [])
 
   const updateEntry = useCallback(
@@ -210,6 +229,8 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
       updateSelection,
       token,
       setToken,
+      lastVisitedIndex,
+      setLastVisitedIndex,
       user,
       clientId,
     }),
@@ -220,6 +241,8 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
       updateSelection,
       token,
       setToken,
+      lastVisitedIndex,
+      setLastVisitedIndex,
       user,
       clientId,
     ]
