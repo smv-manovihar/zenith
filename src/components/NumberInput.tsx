@@ -51,14 +51,21 @@ export const NumberInput: FC<NumberInputProps> = ({
   }
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value
+    let val = e.target.value
+
+    // If user types a number after a leading zero (e.g., "05"), strip the zero
+    // but preserve it for decimals (e.g., "0.5")
+    if (val.length > 1 && val.startsWith("0") && val[1] !== ".") {
+      val = val.substring(1)
+    }
+
     setLocalValue(val)
 
     const parsed = parseFloat(val)
     if (!isNaN(parsed)) {
       const clamped = Math.min(Math.max(min, parsed), max)
       onChange(clamped)
-      // If we clamped (e.g. user typed 11 when max is 10), 
+      // If we clamped (e.g. user typed 11 when max is 10),
       // update localValue to reflect the clamped value
       if (clamped !== parsed) {
         setLocalValue(clamped.toString())
@@ -100,7 +107,7 @@ export const NumberInput: FC<NumberInputProps> = ({
         onFocus={handleFocus}
         onClick={(e) => e.stopPropagation()}
         disabled={disabled}
-        className="w-10 [appearance:textfield] border-none bg-transparent p-0 text-center text-sm font-black focus:ring-0 disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className="w-8 [appearance:textfield] border-none bg-transparent p-0 text-center text-sm font-black focus:ring-0 disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
 
       <Button

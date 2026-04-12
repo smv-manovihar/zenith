@@ -4,10 +4,6 @@ import {
   Info,
   CheckCircle2,
   Play,
-  RefreshCcw,
-  Pause,
-  Clock,
-  XCircle,
   Hash,
   Circle,
   ExternalLink,
@@ -198,36 +194,24 @@ export const MediaCard = memo<MediaCardProps>(
 
               {/* Tracking Controls Box (Only visible when selected) */}
               {isSelected && onUpdateRating && (
-                <div className="flex animate-in flex-col gap-2 rounded-none border border-primary/10 bg-primary/5 p-2 duration-300 fade-in slide-in-from-top-2 sm:grid sm:grid-cols-3 sm:items-center">
+                <div className="flex animate-in flex-wrap items-stretch gap-1.5 rounded-none border border-primary/10 bg-primary/5 p-1.5 duration-300 fade-in slide-in-from-top-2 md:p-2 xl:gap-2">
                   {/* Status Dropdown */}
-                  <div className="min-w-0">
+                  <div className="min-w-[140px] flex-1">
                     <Select
                       value={status}
                       onValueChange={(val: AniListStatus) =>
                         onUpdateStatus?.(media.id, val)
                       }
                     >
-                      <SelectTrigger className="h-10 w-full border-primary/20 bg-background/50 px-3 font-semibold text-primary shadow-none hover:bg-background/80">
-                        <div className="flex items-center gap-2">
+                      <SelectTrigger className="h-10 w-full border-primary/20 bg-background/50 px-2 font-semibold text-primary shadow-none hover:bg-background/80 sm:px-3">
+                        <div className="flex items-center gap-1.5">
                           {status === "CURRENT" && (
-                            <Play className="h-3.5 w-3.5 fill-primary" />
+                            <Play className="h-3 w-3 fill-primary sm:h-3.5 sm:w-3.5" />
                           )}
-                          {status === "PLANNING" && (
-                            <Clock className="h-3.5 w-3.5" />
-                          )}
-                          {status === "COMPLETED" && (
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                          )}
-                          {status === "REPEATING" && (
-                            <RefreshCcw className="h-3.5 w-3.5" />
-                          )}
-                          {status === "PAUSED" && (
-                            <Pause className="h-3.5 w-3.5 fill-primary" />
-                          )}
-                          {status === "DROPPED" && (
-                            <XCircle className="h-3.5 w-3.5" />
-                          )}
-                          <SelectValue placeholder="Set Status" />
+                          <SelectValue
+                            placeholder="Status"
+                            className="text-xs"
+                          />
                         </div>
                       </SelectTrigger>
                       <SelectContent>
@@ -241,18 +225,23 @@ export const MediaCard = memo<MediaCardProps>(
                     </Select>
                   </div>
 
-                  {/* Wrapper for Progress and Score on mobile */}
-                  <div className={`col-span-2 flex flex-col gap-2 sm:flex-row`}>
+                  {/* Wrapper for Progress and Score */}
+                  <div
+                    className={cn(
+                      "flex min-w-0 flex-1 flex-wrap gap-1.5 xl:gap-2",
+                      showProgress ? "basis-[300px]" : "basis-[140px]"
+                    )}
+                  >
                     {/* Progress Input */}
                     {showProgress && (
-                      <div className="flex h-10 flex-1 items-center justify-between gap-2 rounded-none border border-primary/20 bg-background/50 px-3">
-                        <div className="flex items-center gap-2">
-                          <Hash className="h-3.5 w-3.5 shrink-0 text-primary opacity-50" />
-                          <span className="text-[10px] font-black tracking-widest text-primary uppercase">
+                      <div className="flex h-10 min-w-[140px] flex-1 items-center justify-between gap-1.5 rounded-none border border-primary/20 bg-background/50 px-2 sm:px-3">
+                        <div className="flex min-w-0 items-center gap-1">
+                          <Hash className="h-3 w-3 shrink-0 text-primary opacity-50 sm:h-3.5 sm:w-3.5" />
+                          <span className="truncate text-[9px] font-black tracking-tighter text-primary uppercase sm:text-[10px]">
                             Ep
                           </span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex shrink-0 items-center gap-1">
                           <NumberInput
                             value={progress || 0}
                             step={1}
@@ -261,8 +250,8 @@ export const MediaCard = memo<MediaCardProps>(
                             }
                           />
                           {totalEpisodes && (
-                            <span className="shrink-0 text-[10px] font-black text-primary opacity-30">
-                              / {totalEpisodes}
+                            <span className="shrink-0 text-[10px] font-black text-primary">
+                              /{totalEpisodes}
                             </span>
                           )}
                         </div>
@@ -271,31 +260,43 @@ export const MediaCard = memo<MediaCardProps>(
 
                     {/* Score Input */}
                     <div
-                      className={`flex h-10 items-center justify-between gap-2 rounded-none border px-3 transition-all ${
+                      className={cn(
+                        "flex h-10 min-w-[140px] flex-1 items-center justify-between gap-1.5 rounded-none border px-2 transition-all sm:px-3",
                         rating === 0
                           ? "animate-pulse border-destructive/40 bg-destructive/10"
                           : "border-primary/20 bg-background/50"
-                      } ${showProgress ? "flex-1" : "w-full"}`}
+                      )}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex min-w-0 items-center gap-1">
                         <Star
-                          className={`h-3.5 w-3.5 shrink-0 ${rating === 0 ? "fill-destructive text-destructive" : "fill-primary text-primary"}`}
+                          className={cn(
+                            "h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5",
+                            rating === 0
+                              ? "fill-destructive text-destructive"
+                              : "fill-primary text-primary"
+                          )}
                         />
                         <span
-                          className={`text-[10px] font-black tracking-widest uppercase ${rating === 0 ? "text-destructive" : "text-primary"}`}
+                          className={cn(
+                            "truncate text-[9px] font-black tracking-tighter uppercase sm:text-[10px]",
+                            rating === 0 ? "text-destructive" : "text-primary"
+                          )}
                         >
-                          {rating === 0 ? "Set Score" : "Score"}
+                          {rating === 0 ? "Score" : "Score"}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex shrink-0 items-center gap-1">
                         <NumberInput
                           value={rating || 0}
                           onChange={(val) => onUpdateRating?.(media.id, val)}
                         />
                         <span
-                          className={`shrink-0 text-[10px] font-black ${rating === 0 ? "text-destructive" : "text-primary"}`}
+                          className={cn(
+                            "shrink-0 text-[10px] font-black opacity-100",
+                            rating === 0 ? "text-destructive" : "text-primary"
+                          )}
                         >
-                          / 10
+                          /10
                         </span>
                       </div>
                     </div>

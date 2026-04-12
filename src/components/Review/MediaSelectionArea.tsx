@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { NumberInput } from "@/components/NumberInput"
 import { queryAniList, SEARCH_ANIME_QUERY } from "@/lib/anilist"
+import { Storage } from "@/lib/storage"
 import { normalizeTitle, cn } from "@/lib/utils"
 import { ReviewSidebar } from "./ReviewSidebar"
 import { MediaCardSkeleton } from "./MediaCardSkeleton"
@@ -99,11 +100,8 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedFormats, setSelectedFormats] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("anilist_updator_preferred_formats")
-      return saved ? JSON.parse(saved) : FORMATS.map((f) => f.value)
-    }
-    return []
+    const saved = Storage.getPreferredFormats()
+    return saved ? JSON.parse(saved) : FORMATS.map((f) => f.value)
   })
 
   const toggleFormat = useCallback((formatValue: string) => {
@@ -132,10 +130,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
 
   // Persist format preferences
   useEffect(() => {
-    localStorage.setItem(
-      "anilist_updator_preferred_formats",
-      JSON.stringify(selectedFormats)
-    )
+    Storage.setPreferredFormats(selectedFormats)
   }, [selectedFormats])
   const [isEditingSearch, setIsEditingSearch] = useState(false)
   const [expandedMediaIds, setExpandedMediaIds] = useState<Set<number>>(
@@ -205,7 +200,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
         updateEntry(currentIndex, {
           selections: perfectMatches.map((match: any) => ({
             id: match.id,
-            title: match.title.romaji || match.title.english || "No Title",
+            title: match.title.english || match.title.romaji || match.title.native || "No Title",
             image: match.coverImage?.large || "",
             rating: currentEntry.rating,
             status: "pending",
@@ -238,7 +233,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
       } else {
         newSelections.push({
           id: media.id,
-          title: media.title.english || media.title.romaji || "No Title",
+          title: media.title.english || media.title.romaji || media.title.native || "No Title",
           image: media.coverImage?.large || "",
           rating: currentEntry.rating,
           status: "pending",
@@ -285,7 +280,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
       updateEntry(currentIndex, {
         selections: perfectMatches.map((match: any) => ({
           id: match.id,
-          title: match.title.romaji || match.title.english || "No Title",
+          title: match.title.english || match.title.romaji || match.title.native || "No Title",
           image: match.coverImage?.large || "",
           rating: currentEntry.rating,
           status: "pending",
@@ -304,7 +299,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
 
     const newSelections = searchResults.map((media: any) => ({
       id: media.id,
-      title: media.title.english || media.title.romaji || "No Title",
+      title: media.title.english || media.title.romaji || media.title.native || "No Title",
       image: media.coverImage?.large || "",
       rating: currentEntry.rating,
       status: "pending",
@@ -418,7 +413,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
   return (
     <Card className="overflow-hidden rounded-none border shadow-2xl">
       {/* ── Header ── */}
-      <div className="space-y-5 border-b p-4 sm:p-6 lg:p-8">
+      <div className="space-y-5 border-b p-4 sm:p-6">
         {/* Row 1: title + score */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           {/* Left: sidebar trigger + title block */}
@@ -520,7 +515,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
                   })
                 }}
               />
-              <span className="text-xs font-black opacity-70 sm:text-sm">
+              <span className="text-xs font-black opacity-100 sm:text-sm">
                 / 10
               </span>
             </div>

@@ -436,7 +436,7 @@ const Sync: FC = () => {
   )
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-8 px-1 pb-24 sm:px-4">
+    <div className="mx-auto w-full max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-8 px-1 pb-24 sm:px-4">
       <div className="max-w-lg space-y-3 text-left">
         <h2 className="bg-linear-to-b from-foreground to-foreground/70 bg-clip-text text-3xl font-black tracking-tighter text-transparent uppercase sm:text-4xl">
           Commit to AniList
@@ -611,7 +611,7 @@ const Sync: FC = () => {
               target="_blank"
               rel="noopener noreferrer"
             >
-              View My AniList Profile
+              View Your AniList Profile
               <ExternalLink className="h-3 w-3" />
             </a>
           </Button>

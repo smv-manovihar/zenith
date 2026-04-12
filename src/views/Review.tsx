@@ -6,6 +6,7 @@ import {
   type FC,
   useMemo,
 } from "react"
+import { AnimatePresence } from "framer-motion"
 import { AlertCircle } from "lucide-react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { useProgress } from "@/components/ProgressProvider"
@@ -163,60 +164,65 @@ const Review: FC = () => {
   }
 
   return (
-    <div className="mx-auto max-w-7xl animate-in space-y-10 px-1 pb-32 duration-700 fade-in sm:px-6 lg:px-8">
-      <ReviewHeader
-        entriesCount={entries.length}
-        resolvedCount={resolvedCount}
-        entriesWithMissingScores={entriesWithMissingScores}
-        isFilterActive={showMissingOnly}
-        onToggleMissingFilter={() => setShowMissingOnly(!showMissingOnly)}
-      />
+    <>
+      <div className="mx-auto max-w-7xl animate-in space-y-10 px-1 pb-40 duration-700 fade-in sm:px-6 lg:px-8">
+        <ReviewHeader
+          entriesCount={entries.length}
+          resolvedCount={resolvedCount}
+          entriesWithMissingScores={entriesWithMissingScores}
+          isFilterActive={showMissingOnly}
+          onToggleMissingFilter={() => setShowMissingOnly(!showMissingOnly)}
+        />
 
-      <div className="grid items-start gap-10 lg:grid-cols-12">
-        {/* Left Side: Navigation List (Desktop) */}
-        <div className="hidden space-y-4 lg:col-span-4 lg:block">
-          <ReviewSidebar
-            entries={filteredEntries.map((fe) => ({
-              ...fe.entry,
-              originalIndex: fe.index,
-            }))}
-            currentIndex={currentIndex}
-            onSelectEntry={setCurrentIndex}
-            onUpdateRating={updateRating}
-            searchQuery={sidebarSearchQuery}
-            onSearchChange={setSidebarSearchQuery}
-            isFilterActive={showMissingOnly}
-            onClearFilters={handleClearFilters}
-          />
-        </div>
+        <div className="grid items-start gap-10 lg:grid-cols-12">
+          {/* Left Side: Navigation List (Desktop) */}
+          <div className="hidden space-y-4 lg:col-span-4 lg:block">
+            <ReviewSidebar
+              entries={filteredEntries.map((fe) => ({
+                ...fe.entry,
+                originalIndex: fe.index,
+              }))}
+              currentIndex={currentIndex}
+              onSelectEntry={setCurrentIndex}
+              onUpdateRating={updateRating}
+              searchQuery={sidebarSearchQuery}
+              onSearchChange={setSidebarSearchQuery}
+              isFilterActive={showMissingOnly}
+              onClearFilters={handleClearFilters}
+            />
+          </div>
 
-        {/* Right Side: Media Selection Area */}
-        <div ref={selectionAreaRef} className="space-y-6 lg:col-span-8">
-          <MediaSelectionArea
-            currentEntry={currentEntry}
-            currentIndex={currentIndex}
-            updateEntry={updateEntry}
-            onViewDetails={setSelectedDetailsMedia}
-            entries={entries}
-            onSelectEntry={setCurrentIndex}
-            onClearFilters={handleClearFilters}
-          />
+          {/* Right Side: Media Selection Area */}
+          <div ref={selectionAreaRef} className="space-y-6 lg:col-span-8">
+            <MediaSelectionArea
+              currentEntry={currentEntry}
+              currentIndex={currentIndex}
+              updateEntry={updateEntry}
+              onViewDetails={setSelectedDetailsMedia}
+              entries={entries}
+              onSelectEntry={setCurrentIndex}
+              onClearFilters={handleClearFilters}
+            />
+          </div>
         </div>
       </div>
 
-      <ReviewNavigation
-        currentIndex={currentIndex}
-        entriesCount={entries.length}
-        currentEntrySelectionsCount={currentEntry.selections.length}
-        onNext={handleNext}
-        onPrev={handlePrev}
-      />
+      <AnimatePresence mode="wait">
+        <ReviewNavigation
+          key="review-nav"
+          currentIndex={currentIndex}
+          entriesCount={entries.length}
+          currentEntrySelectionsCount={currentEntry.selections.length}
+          onNext={handleNext}
+          onPrev={handlePrev}
+        />
+      </AnimatePresence>
 
       <MediaDetailsDialog
         media={selectedDetailsMedia}
         onClose={() => setSelectedDetailsMedia(null)}
       />
-    </div>
+    </>
   )
 }
 

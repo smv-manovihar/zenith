@@ -1,4 +1,5 @@
 import { type FC } from "react"
+import { motion } from "framer-motion"
 import { ChevronRight, ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -23,7 +24,18 @@ export const ReviewNavigation: FC<ReviewNavigationProps> = ({
   onPrev,
 }) => {
   return (
-    <div className="fixed right-4 bottom-6 left-4 z-50 flex animate-in items-center justify-between gap-2 rounded-none border border-primary/20 bg-card/60 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-2xl transition-all duration-500 fade-in slide-in-from-bottom-8 sm:right-auto sm:bottom-8 sm:left-1/2 sm:w-full sm:max-w-2xl sm:-translate-x-1/2 sm:gap-6 sm:rounded-none sm:p-3">
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      transition={{
+        type: "spring",
+        damping: 25,
+        stiffness: 200,
+        opacity: { duration: 0.8 },
+      }}
+      className="fixed bottom-6 left-4 right-4 z-50 flex items-center justify-between gap-2 rounded-none border border-primary/20 bg-card/60 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:bottom-8 sm:mx-auto sm:w-full sm:max-w-2xl sm:gap-6 sm:rounded-none sm:p-3"
+    >
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -87,6 +99,6 @@ export const ReviewNavigation: FC<ReviewNavigationProps> = ({
             : "Proceed to next entry"}
         </TooltipContent>
       </Tooltip>
-    </div>
+    </motion.div>
   )
 }

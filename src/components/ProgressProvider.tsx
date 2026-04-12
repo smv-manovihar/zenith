@@ -7,6 +7,7 @@ import React, {
   useCallback,
 } from "react"
 import { queryAniList, GET_VIEWER_QUERY } from "@/lib/anilist"
+import { Storage } from "@/lib/storage"
 import { toast } from "sonner"
 
 export type EntryStatus =
@@ -82,7 +83,7 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [entries, setEntriesState] = useState<AnimeEntry[]>(() => {
-    const saved = localStorage.getItem("anilist_updator_entries")
+    const saved = Storage.getEntries()
     if (!saved) return []
 
     try {
@@ -122,17 +123,15 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   })
 
-  const [token, setTokenState] = useState<string | null>(() =>
-    localStorage.getItem("anilist_updator_token")
-  )
+  const [token, setTokenState] = useState<string | null>(() => Storage.getToken())
   const [user, setUser] = useState<UserData | null>(() => {
-    const saved = localStorage.getItem("anilist_updator_user")
+    const saved = Storage.getUser()
     return saved ? JSON.parse(saved) : null
   })
   const clientId = import.meta.env.VITE_ANILIST_CLIENT_ID || ""
 
   const [lastVisitedIndex, setLastVisitedIndexState] = useState<number>(() => {
-    const saved = localStorage.getItem("anilist_updator_last_index")
+    const saved = Storage.getLastIndex()
     return saved ? parseInt(saved, 10) : 0
   })
 
@@ -158,10 +157,7 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
               },
             }
             setUser(userData)
-            localStorage.setItem(
-              "anilist_updator_user",
-              JSON.stringify(userData)
-            )
+            Storage.setUser(userData)
           }
         } catch (error: any) {
           if (error.name === "AbortError" || error.message === "canceled")
@@ -176,25 +172,21 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [token, user])
 
   useEffect(() => {
-    localStorage.setItem(
-      "anilist_updator_last_index",
-      lastVisitedIndex.toString()
-    )
+    Storage.setLastIndex(lastVisitedIndex)
   }, [lastVisitedIndex])
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      localStorage.setItem("anilist_updator_entries", JSON.stringify(entries))
+      Storage.setEntries(entries)
     }, 1000) // Debounce for 1 second
 
     return () => clearTimeout(handler)
   }, [entries])
 
   useEffect(() => {
-    if (token) localStorage.setItem("anilist_updator_token", token)
+    if (token) Storage.setToken(token)
     else {
-      localStorage.removeItem("anilist_updator_token")
-      localStorage.removeItem("anilist_updator_user")
+      Storage.removeToken()
       setUser(null)
     }
   }, [token])
