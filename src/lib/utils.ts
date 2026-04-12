@@ -48,3 +48,19 @@ export const getScoreStyles = (score: number) => {
     label: "AVERAGE",
   }
 }
+
+/**
+ * Strips dangerous tags like <script> and <a> from HTML strings.
+ * Used for AniList descriptions.
+ */
+export const sanitizeHtml = (html: string | null | undefined) => {
+  if (!html) return ""
+  return html
+    .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "") // Remove scripts
+    .replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gim, (match) => {
+      // Just extract the text from inside the link
+      return match.replace(/<[^>]+>/g, "")
+    })
+    .replace(/on\w+="[^"]*"/gim, "") // Remove inline event handlers (onerror, onclick, etc)
+    .replace(/javascript:[^"']*/gim, "") // Remove javascript: pseudo-protocol
+}

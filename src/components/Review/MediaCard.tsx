@@ -8,7 +8,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { NumberInput } from "@/components/NumberInput"
-import { getScoreStyles } from "@/lib/utils"
+import { getScoreStyles, sanitizeHtml } from "@/lib/utils"
 
 interface MediaCardProps {
   media: any
@@ -125,7 +125,7 @@ export const MediaCard = React.memo<MediaCardProps>(
               <p
                 className="line-clamp-2 text-xs leading-relaxed text-muted-foreground"
                 dangerouslySetInnerHTML={{
-                  __html: media.description || "",
+                  __html: sanitizeHtml(media.description || ""),
                 }}
               />
             </div>

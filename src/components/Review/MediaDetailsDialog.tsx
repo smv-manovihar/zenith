@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { getScoreStyles } from "@/lib/utils"
+import { getScoreStyles, sanitizeHtml } from "@/lib/utils"
 
 interface MediaDetailsDialogProps {
   media: any | null
@@ -93,9 +93,9 @@ export const MediaDetailsDialog: React.FC<MediaDetailsDialogProps> = ({
                   <div
                     className="text-sm leading-relaxed whitespace-pre-line text-muted-foreground/90"
                     dangerouslySetInnerHTML={{
-                      __html:
-                        media.description ||
-                        "No description available.",
+                      __html: sanitizeHtml(
+                        media.description || "No description available."
+                      ),
                     }}
                   />
                 </div>
