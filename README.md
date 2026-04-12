@@ -1,8 +1,8 @@
 # <div align="center">ZENITH</div>
 
 <div align="center">
-  <h3>Precision Control for Your Anime Library.</h3>
-  <p>The total command center for your collection. Zenith automates the tedious searching while giving you absolute control over every match, selection, and rating adjustment—all in one high-fidelity workspace.</p>
+  <h3>The Definitive Synchronization Bridge for Your AniList Library.</h3>
+  <p>Zenith transforms the friction of manual library management into a high-fidelity experience. Import raw lists, resolve matches with intelligent context, and synchronize your collection with absolute precision.</p>
 </div>
 
 <div align="center">
@@ -16,37 +16,42 @@
 
 ## ✨ Features
 
-- **🚀 Instant Import**: Drag & drop CSVs or paste formatted text lists. Zenith initializes your workspace instantly.
-- **🔍 Precision Mastery**: Our multi-match engine handles the heavy lifting, but YOU stay in charge. Refine auto-selections, deselect mismatches, and explore sequel chains.
-- **⚡ Intentional Sync**: Finalize your collection with certainty. Update scores at the last second to reflect your current tastes—not just your old lists.
-- **💎 Centralized Workspace**: Stop jumping between search tabs. Search, Review, Filter, and Sync in one high-velocity, glassmorphic environment.
+- **🧠 Intelligent Media Matching**: Automatically finds the correct series on AniList using advanced title-matching logic that handles varied nomenclature and common naming quirks.
+- **🪄 AI-Readiness Prompt**: Includes a specialized prompt generator designed for external LLMs (ChatGPT, Claude, etc.) to help you transform messy, unstructured watchlists into Zenith-ready formats.
+- **🔍 Franchise & Context Explorer**: Instant access to sequels, prequels, and spin-offs directly within each series card—perfect for expanding your library without extra searching.
+- **🎯 Precision Batch Syncing**: High-speed, parallelized synchronization with real-time rate-limit monitoring to ensure your AniList profile is updated safely and efficiently.
+- **⚠️ Smart Error Recovery**: Zenith flags unparsed lines automatically and provides interactive navigation, allowing you to quickly fix formatting errors directly in the import view.
+- **📱 Modern Mobile Workspace**: A premium, mobile-first design featuring touch-optimized layouts, floating action bars, and zero-compromise functionality on any screen size.
 
-## 🛠️ How it Works
+## 🛠️ The Zenith Workflow
 
-### 1. Import
-Paste a list in the format `[Name] (9/10)` or upload a CSV. Zenith initializes your sequence for review.
+### 1. Unified Import
+Paste raw text lists or upload CSV files. Zenith handles the heavy lifting of parsing, formatting, and flagging any lines that need a human touch.
 
-### 2. Review & Refine
-Zenith automatically searches and suggests matches, but the final call is yours. **Refine search queries**, **deselect auto-matches**, or **update ratings** on the fly as you review your history.
+### 2. Immersive Review
+Confirm matches using high-fidelity media cards. Refine scores, update watch status, and explore related series in a workspace designed for speed and clarity.
 
-### 3. Sync
-Commit your refined collection to AniList. Every score and status is pushed with pinpoint accuracy.
+### 3. High-Fidelity Sync
+Push your refined updates to AniList in one click. Zenith manages API limits and request pacing, ensuring a seamless synchronization even for large collections.
 
 ---
 
 ## 🚀 Getting Started
 
-1. **Clone the repo**
+1. **Clone the Repository**
    ```bash
-   git clone https://github.com/your-username/zenith.git
+   git clone https://github.com/smv-manovihar/zenith.git
    ```
-2. **Install dependencies**
+2. **Install Dependencies**
    ```bash
    pnpm install
    ```
-3. **Set up Environment**
-   Create a `.env` file with your AniList Client ID.
-4. **Launch**
+3. **Configure Environment**
+   Create a `.env` file in the root directory:
+   ```env
+   VITE_ANILIST_CLIENT_ID=your_client_id_here
+   ```
+4. **Launch Development Server**
    ```bash
    pnpm run dev
    ```

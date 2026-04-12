@@ -100,18 +100,23 @@ const Import: FC = () => {
       const linesBefore = text.substring(0, index).split("\n")
       const rowNumber = linesBefore.length - 1
       const lineHeight = 21 // Approx height for text-sm leading-relaxed
-      
+
       // Center the line within the textarea box
-      textarea.scrollTop = (rowNumber * lineHeight) - (textarea.clientHeight / 2) + (lineHeight / 2)
+      textarea.scrollTop =
+        rowNumber * lineHeight - textarea.clientHeight / 2 + lineHeight / 2
 
       // 3. Center the textarea within the "screen"
       // We calculate where the textarea is and where the viewport center is
       const rect = textarea.getBoundingClientRect()
-      const scrollTarget = window.pageYOffset + rect.top - (window.innerHeight / 2) + (textarea.clientHeight / 2)
-      
+      const scrollTarget =
+        window.pageYOffset +
+        rect.top -
+        window.innerHeight / 2 +
+        textarea.clientHeight / 2
+
       window.scrollTo({
         top: Math.max(0, scrollTarget - 40), // 40px offset to keep it slightly above dead center (balance for Navbar)
-        behavior: "smooth"
+        behavior: "smooth",
       })
     }
   }
@@ -127,7 +132,7 @@ const Import: FC = () => {
       if (result && result.entries.length > 0) {
         finalEntries = result.entries
         finalFailed = result.failed
-        
+
         setEntries(finalEntries)
         setFailedLines(finalFailed)
         toast.success(`Loaded ${finalEntries.length} entries via CSV.`)
@@ -143,17 +148,18 @@ const Import: FC = () => {
     for (const line of lines) {
       // 1. Check for Structural Markers
       const hasListMarker = /^[0-9]+[\.\)]\s*|^[\-\*\+]\s*/.test(line)
-      
+
       // 2. Initial Cleaning for pattern matching
       let cleanedLine = line
         .replace(/^[0-9]+[\.\)]\s*/, "") // Strip "1. " or "1) "
-        .replace(/^[\-\*\+]\s*/, "")    // Strip "- " or "* "
+        .replace(/^[\-\*\+]\s*/, "") // Strip "- " or "* "
         .trim()
 
       if (cleanedLine.length === 0) continue
 
       // 3. Primary Regex: [Title] (Score) -> The "Structure of Truth"
-      const scoreRegex = /(?:^|\d*\.?\s*)\[?(.+?)\]?\s*[\(\-:\s]\s*([\d\.,]+)(?:\/10)?\)?$/
+      const scoreRegex =
+        /(?:^|\d*\.?\s*)\[?(.+?)\]?\s*[\(\-:\s]\s*([\d\.,]+)(?:\/10)?\)?$/
       const match = cleanedLine.match(scoreRegex)
 
       if (match) {
@@ -173,7 +179,8 @@ const Import: FC = () => {
         // Only accept as a "Title-Only" entry if it has an explicit list marker
         // and doesn't look like a URL or a multi-line sentence.
         const isUrl = /^(https?:\/\/|www\.)/i.test(cleanedLine)
-        const isProse = /[\.\?\!]$/.test(cleanedLine) && cleanedLine.includes(" ")
+        const isProse =
+          /[\.\?\!]$/.test(cleanedLine) && cleanedLine.includes(" ")
 
         if (hasListMarker && cleanedLine.length > 2 && !isUrl && !isProse) {
           finalEntries.push({
@@ -283,7 +290,7 @@ const Import: FC = () => {
               <Textarea
                 ref={textareaRef}
                 placeholder="1. Cowboy Bebop (10/10)&#10; Akira (9/10)..."
-                className="min-h-[300px] max-h-[500px] overflow-y-auto rounded-none font-mono text-sm leading-relaxed focus-visible:ring-primary/30"
+                className="max-h-[500px] min-h-[300px] overflow-y-auto rounded-none font-mono text-sm leading-relaxed focus-visible:ring-primary/30"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
               />
@@ -378,7 +385,7 @@ const Import: FC = () => {
         <div className="fixed right-4 bottom-6 left-4 z-50 flex animate-in flex-col gap-3 rounded-none border border-primary/20 bg-card/60 p-4 shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-2xl transition-all duration-500 fade-in slide-in-from-bottom-8 sm:right-auto sm:bottom-8 sm:left-1/2 sm:w-full sm:max-w-md sm:-translate-x-1/2">
           <div className="flex items-center justify-between px-2 sm:px-4">
             <div className="flex flex-col">
-              <p className="text-[8px] font-black tracking-[0.2em] text-muted-foreground uppercase opacity-60 sm:text-[9px]">
+              <p className="text-[8px] font-black tracking-[0.2em] text-muted-foreground uppercase sm:text-[9px]">
                 Import Collection
               </p>
               <p className="text-xs font-black text-primary sm:text-sm">
@@ -387,7 +394,7 @@ const Import: FC = () => {
             </div>
             <div className="h-8 w-px bg-primary/10" />
             <div className="flex flex-col text-right">
-              <p className="text-[8px] font-black tracking-[0.2em] text-muted-foreground uppercase opacity-60 sm:text-[9px]">
+              <p className="text-[8px] font-black tracking-[0.2em] text-muted-foreground uppercase sm:text-[9px]">
                 Source
               </p>
               <p className="text-xs font-black text-foreground sm:text-sm">
@@ -395,7 +402,7 @@ const Import: FC = () => {
               </p>
             </div>
           </div>
-          
+
           <Button
             size="lg"
             onClick={() => navigate("/review")}

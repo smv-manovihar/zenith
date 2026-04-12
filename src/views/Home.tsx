@@ -48,14 +48,16 @@ const Home: React.FC = () => {
   return (
     <div className="mx-auto max-w-5xl animate-in space-y-16 px-4 py-12 duration-1000 fade-in">
       {/* Hero Section */}
-      <div className="space-y-8 py-10 text-center">
+      <div className="space-y-8 text-center">
         <div className="space-y-4">
-          <h1 className="bg-linear-to-b from-foreground to-muted-foreground bg-clip-text text-5xl leading-[1.1] font-black tracking-tighter text-transparent md:text-7xl">
-            Sync Lists To <span className="text-primary">AniList</span>
+          <h1 className="bg-linear-to-b from-foreground to-muted-foreground bg-clip-text text-5xl leading-[1.1] font-black tracking-tighter text-transparent md:text-6xl lg:text-8xl">
+            Sync Your <br className="hidden md:block" />
+            <span className="text-primary">Offline</span> Watch Lists{" "}
+            <br className="hidden md:block" />
+            to <span className="text-primary">AniList</span>
           </h1>
           <p className="mx-auto max-w-2xl text-lg leading-relaxed font-medium text-muted-foreground">
-            High-performance batch synchronization for your anime library.
-            Automated search, related-show detection, and precision sync.
+            Simple way to sync your anime watch list to AniList.
           </p>
         </div>
 
@@ -95,7 +97,7 @@ const Home: React.FC = () => {
                   onClick={handleLogin}
                 >
                   <LogIn className="h-6 w-6 transition-transform group-hover:rotate-12" />
-                  Connect Zenith
+                  Connect AniList
                   <ChevronRight className="h-5 w-5 opacity-50" />
                 </Button>
               ) : (
@@ -218,7 +220,8 @@ const Home: React.FC = () => {
                       VITE_ANILIST_CLIENT_ID
                     </code>{" "}
                     to your provider's Environment Variables and add your
-                    production URL to the Redirect URIs in the AniList dashboard.
+                    production URL to the Redirect URIs in the AniList
+                    dashboard.
                   </p>
                 </section>
               </div>

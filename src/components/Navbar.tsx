@@ -2,7 +2,8 @@ import React from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useProgress } from "./ProgressProvider"
 import { Button } from "@/components/ui/button"
-import { LogOut, CheckCircle2, ArrowRight } from "lucide-react"
+import { LogOut, CheckCircle2, ArrowRight, Sun, Moon } from "lucide-react"
+import { useTheme } from "./theme-provider"
 import { cn } from "@/lib/utils"
 import { useScrollDirection } from "@/hooks/useScrollDirection"
 
@@ -14,9 +15,14 @@ import {
 
 export const Navbar: React.FC = () => {
   const { token, setToken } = useProgress()
+  const { theme, setTheme } = useTheme()
   const location = useLocation()
   const navigate = useNavigate()
   const scrollDirection = useScrollDirection()
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark")
+  }
 
   const handleLogout = () => {
     setToken(null)
@@ -91,7 +97,27 @@ export const Navbar: React.FC = () => {
             </div>
           )}
 
-          <div className="flex shrink-0 items-center gap-4">
+          <div className="flex shrink-0 items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-none"
+                  onClick={toggleTheme}
+                >
+                  {theme === "dark" ? (
+                    <Sun className="h-4 w-4" />
+                  ) : (
+                    <Moon className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="end">
+                Switch to {theme === "dark" ? "light" : "dark"} mode
+              </TooltipContent>
+            </Tooltip>
+
             {token ? (
               <Tooltip>
                 <TooltipTrigger asChild>

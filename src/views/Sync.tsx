@@ -17,6 +17,10 @@ import {
   ExternalLink,
   Star,
   Info,
+  Pause,
+  Clock,
+  XCircle,
+  Hash,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
@@ -28,6 +32,14 @@ import {
 } from "@/components/ui/tooltip"
 import { NumberInput } from "@/components/NumberInput"
 import { List, type RowComponentProps } from "react-window"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { type AniListStatus } from "@/components/ProgressProvider"
 
 type SyncRowItem =
   | { type: "header"; entry: AnimeEntry; index: number }
@@ -72,6 +84,36 @@ const SyncRowComponent = ({
   }
 
   const { selection, entryIndex, selectionIndex, entry } = item
+  const showProgress = ["CURRENT", "REPEATING", "PAUSED", "DROPPED"].includes(
+    selection.anilistStatus
+  )
+
+  const handleStatusChange = (val: AniListStatus) => {
+    const newSelections = entry.selections.map((s, i) => {
+      if (i !== selectionIndex) return s
+      const updates: Partial<Selection> = { anilistStatus: val }
+      if (val === "COMPLETED" && selection.totalEpisodes) {
+        updates.progress = selection.totalEpisodes
+      }
+      return { ...s, ...updates }
+    })
+    updateEntry(entryIndex, { selections: newSelections })
+  }
+
+  const handleProgressChange = (val: number) => {
+    const newSelections = entry.selections.map((s, i) =>
+      i === selectionIndex ? { ...s, progress: val } : s
+    )
+    updateEntry(entryIndex, { selections: newSelections })
+  }
+
+  const handleRatingChange = (val: number) => {
+    const newSelections = entry.selections.map((s, i) =>
+      i === selectionIndex ? { ...s, rating: val } : s
+    )
+    updateEntry(entryIndex, { selections: newSelections })
+  }
+
   return (
     <div style={style} className="px-1 sm:px-2">
       <div className="flex h-[72px] items-center justify-between border-b bg-card/50 p-2 pl-4 last:border-0 sm:p-3 sm:pl-6">
@@ -84,23 +126,74 @@ const SyncRowComponent = ({
               />
             )}
           </div>
-          <div className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-xs font-bold sm:text-sm">
+          <div className="flex min-w-0 flex-1 flex-col justify-center">
+            <span className="truncate text-[10px] font-bold sm:text-xs">
               {selection.title}
             </span>
-            <div className="mt-1 flex w-fit items-center gap-1.5 bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary sm:px-2 sm:text-[10px]">
-              <Star className="h-2.5 w-2.5 fill-primary text-primary sm:h-3 sm:w-3" />
-              <span className="xs:inline hidden uppercase">Score</span>
-              <NumberInput
-                value={selection.rating}
-                onChange={(val: number) => {
-                  const newSelections = entry.selections.map((s, i) =>
-                    i === selectionIndex ? { ...s, rating: val } : s
-                  )
-                  updateEntry(entryIndex, { selections: newSelections })
-                }}
-              />
-              <span className="opacity-40">/10</span>
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 sm:gap-2">
+              {/* Status Select */}
+              <Select
+                value={selection.anilistStatus}
+                onValueChange={handleStatusChange}
+              >
+                <SelectTrigger className="h-6 w-fit border-none bg-primary/10 px-1.5 py-0 text-[9px] font-black text-primary shadow-none hover:bg-primary/20 sm:h-7 sm:px-2 sm:text-[10px]">
+                  <div className="flex items-center gap-1">
+                    {selection.anilistStatus === "CURRENT" && (
+                      <Play className="h-2.5 w-2.5 fill-primary" />
+                    )}
+                    {selection.anilistStatus === "PLANNING" && (
+                      <Clock className="h-2.5 w-2.5" />
+                    )}
+                    {selection.anilistStatus === "COMPLETED" && (
+                      <CheckCircle2 className="h-2.5 w-2.5" />
+                    )}
+                    {selection.anilistStatus === "REPEATING" && (
+                      <RefreshCcw className="h-2.5 w-2.5" />
+                    )}
+                    {selection.anilistStatus === "PAUSED" && (
+                      <Pause className="h-2.5 w-2.5 fill-primary" />
+                    )}
+                    {selection.anilistStatus === "DROPPED" && (
+                      <XCircle className="h-2.5 w-2.5" />
+                    )}
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CURRENT">Watching</SelectItem>
+                  <SelectItem value="PLANNING">Plan to Watch</SelectItem>
+                  <SelectItem value="COMPLETED">Completed</SelectItem>
+                  <SelectItem value="REPEATING">Rewatching</SelectItem>
+                  <SelectItem value="PAUSED">Paused</SelectItem>
+                  <SelectItem value="DROPPED">Dropped</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Progress Input */}
+              {showProgress && (
+                <div className="flex items-center gap-1 rounded-none bg-muted/50 px-1.5 py-0 text-[9px] font-bold text-muted-foreground sm:px-2 sm:text-[10px]">
+                  <Hash className="h-2.5 w-2.5 opacity-50 sm:h-3 sm:w-3" />
+                  <span className="xs:inline hidden uppercase">Ep</span>
+                  <NumberInput
+                    value={selection.progress}
+                    onChange={handleProgressChange}
+                  />
+                  {selection.totalEpisodes && (
+                    <span className="opacity-40">/ {selection.totalEpisodes}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Score Input */}
+              <div className="flex items-center gap-1 rounded-none bg-primary/10 px-1.5 py-0 text-[9px] font-bold text-primary sm:px-2 sm:text-[10px]">
+                <Star className="h-2.5 w-2.5 fill-primary text-primary sm:h-3 sm:w-3" />
+                <span className="xs:inline hidden uppercase">Score</span>
+                <NumberInput
+                  value={selection.rating}
+                  onChange={handleRatingChange}
+                />
+                <span className="opacity-60">/10</span>
+              </div>
             </div>
           </div>
         </div>
@@ -187,8 +280,9 @@ const Sync: FC = () => {
             SAVE_MEDIA_LIST_ENTRY,
             {
               mediaId: selection.id,
-              status: "COMPLETED",
+              status: selection.anilistStatus,
               score: selection.rating,
+              progress: selection.progress,
             },
             token
           )

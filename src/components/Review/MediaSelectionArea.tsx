@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Layers, Edit2, Star, AlertCircle } from "lucide-react"
+import {
+  Layers,
+  Edit2,
+  Star,
+  AlertCircle,
+  Sparkles,
+  CheckSquare,
+  RefreshCcw,
+} from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -61,6 +69,7 @@ export const MediaSelectionArea: React.FC<MediaSelectionAreaProps> = ({
       !isLoading &&
       currentEntry &&
       currentEntry.selections.length === 0 &&
+      !currentEntry.isManual &&
       normalizeTitle(searchQuery) === normalizeTitle(currentEntry.name)
     ) {
       const normalizedQuery = normalizeTitle(searchQuery)
@@ -92,6 +101,9 @@ export const MediaSelectionArea: React.FC<MediaSelectionAreaProps> = ({
             image: match.coverImage?.large || "",
             rating: currentEntry.rating,
             status: "pending",
+            anilistStatus: "COMPLETED",
+            progress: match.episodes || 0,
+            totalEpisodes: match.episodes || null,
           })),
           status: "resolved",
         })
@@ -122,23 +134,132 @@ export const MediaSelectionArea: React.FC<MediaSelectionAreaProps> = ({
           image: media.coverImage?.large || "",
           rating: currentEntry.rating,
           status: "pending",
+          anilistStatus: "COMPLETED",
+          progress: media.episodes || 0,
+          totalEpisodes: media.episodes || null,
         })
       }
 
       updateEntry(currentIndex, {
         selections: newSelections,
         status: newSelections.length > 0 ? "resolved" : "pending",
+        isManual: true,
       })
     },
     [currentEntry, currentIndex, updateEntry]
   )
+
+  const handleAutoSelect = useCallback(() => {
+    if (!searchResults.length || !currentEntry) return
+
+    const normalizedQuery = normalizeTitle(searchQuery)
+    const lowerQuery = searchQuery.toLowerCase().trim()
+
+    const perfectMatches = searchResults.filter((media: any) => {
+      const titles = [
+        media.title.romaji,
+        media.title.english,
+        media.title.native,
+      ].filter(Boolean)
+
+      return titles.some((t: string) => {
+        const lowerT = t.toLowerCase().trim()
+        const normT = normalizeTitle(t)
+        return (
+          lowerT === lowerQuery ||
+          normT === normalizedQuery ||
+          normT.includes(normalizedQuery)
+        )
+      })
+    })
+
+    if (perfectMatches.length > 0) {
+      updateEntry(currentIndex, {
+        selections: perfectMatches.map((match: any) => ({
+          id: match.id,
+          title: match.title.romaji || match.title.english || "No Title",
+          image: match.coverImage?.large || "",
+          rating: currentEntry.rating,
+          status: "pending",
+          anilistStatus: "COMPLETED",
+          progress: match.episodes || 0,
+          totalEpisodes: match.episodes || null,
+        })),
+        status: "resolved",
+        isManual: true,
+      })
+    }
+  }, [searchResults, currentEntry, searchQuery, currentIndex, updateEntry])
+
+  const handleSelectAll = useCallback(() => {
+    if (!searchResults.length || !currentEntry) return
+
+    const newSelections = searchResults.map((media: any) => ({
+      id: media.id,
+      title: media.title.english || media.title.romaji || "No Title",
+      image: media.coverImage?.large || "",
+      rating: currentEntry.rating,
+      status: "pending",
+      anilistStatus: "COMPLETED",
+      progress: media.episodes || 0,
+      totalEpisodes: media.episodes || null,
+    }))
+
+    updateEntry(currentIndex, {
+      selections: newSelections,
+      status: "resolved",
+      isManual: true,
+    })
+  }, [searchResults, currentEntry, currentIndex, updateEntry])
+
+  const handleClearAll = useCallback(() => {
+    updateEntry(currentIndex, {
+      selections: [],
+      status: "pending",
+      isManual: true,
+    })
+  }, [currentIndex, updateEntry])
 
   const updateSelectionRating = useCallback(
     (mediaId: number, val: number) => {
       const newSelections = currentEntry.selections.map((s: any) =>
         s.id === mediaId ? { ...s, rating: val } : s
       )
-      updateEntry(currentIndex, { selections: newSelections })
+      updateEntry(currentIndex, {
+        selections: newSelections,
+        isManual: true,
+      })
+    },
+    [currentEntry.selections, currentIndex, updateEntry]
+  )
+
+  const updateSelectionStatus = useCallback(
+    (mediaId: number, val: any) => {
+      const newSelections = currentEntry.selections.map((s: any) => {
+        if (s.id !== mediaId) return s
+        const updates: any = { anilistStatus: val }
+        if (val === "COMPLETED" && s.totalEpisodes) {
+          updates.progress = s.totalEpisodes
+        }
+        return { ...s, ...updates }
+      })
+      updateEntry(currentIndex, {
+        selections: newSelections,
+        isManual: true,
+      })
+    },
+    [currentEntry.selections, currentIndex, updateEntry]
+  )
+
+  const updateSelectionProgress = useCallback(
+    (mediaId: number, val: number) => {
+      const newSelections = currentEntry.selections.map((s: any) =>
+        s.id === mediaId ? { ...s, progress: val } : s
+      )
+      updateEntry(currentIndex, {
+        selections: newSelections,
+        isManual: true,
+      })
     },
     [currentEntry.selections, currentIndex, updateEntry]
   )
@@ -170,6 +291,36 @@ export const MediaSelectionArea: React.FC<MediaSelectionAreaProps> = ({
       return selection ? selection.rating : currentEntry.rating
     },
     [currentEntry.selections, currentEntry.rating]
+  )
+
+  const getMediaStatus = useCallback(
+    (mediaId: number) => {
+      const selection = currentEntry.selections.find(
+        (s: any) => s.id === mediaId
+      )
+      return selection ? selection.anilistStatus : "COMPLETED"
+    },
+    [currentEntry.selections]
+  )
+
+  const getMediaProgress = useCallback(
+    (mediaId: number) => {
+      const selection = currentEntry.selections.find(
+        (s: any) => s.id === mediaId
+      )
+      return selection ? selection.progress : 0
+    },
+    [currentEntry.selections]
+  )
+
+  const getMediaTotalEpisodes = useCallback(
+    (mediaId: number) => {
+      const selection = currentEntry.selections.find(
+        (s: any) => s.id === mediaId
+      )
+      return selection ? selection.totalEpisodes : null
+    },
+    [currentEntry.selections]
   )
 
   return (
@@ -222,7 +373,7 @@ export const MediaSelectionArea: React.FC<MediaSelectionAreaProps> = ({
                 </div>
               )}
             </div>
-            <p className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase opacity-60 sm:text-[10px]">
+            <p className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase sm:text-[10px]">
               Source: {currentEntry.originalLine}
             </p>
           </div>
@@ -236,14 +387,47 @@ export const MediaSelectionArea: React.FC<MediaSelectionAreaProps> = ({
               <NumberInput
                 value={currentEntry.rating}
                 onChange={(val: number) =>
-                  updateEntry(currentIndex, { rating: val })
+                  updateEntry(currentIndex, { rating: val, isManual: true })
                 }
               />
-              <span className="text-xs font-black opacity-30 sm:text-sm">
-                /10
-              </span>
+              <span className="text-xs font-black opacity-70 sm:text-sm">/ 10</span>
             </div>
           </div>
+        </div>
+
+        {/* Quick Actions Bar */}
+        <div className="grid grid-cols-2 gap-2 border-t border-white/5 pt-2 sm:flex sm:flex-wrap sm:items-center sm:gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 gap-2 rounded-none border-primary/20 font-black tracking-tighter uppercase sm:h-10 sm:px-4"
+            onClick={handleAutoSelect}
+            disabled={isLoading || searchResults.length === 0}
+          >
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="text-[10px] sm:text-xs">Auto Select</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 gap-2 rounded-none border-primary/20 font-black tracking-tighter uppercase sm:h-10 sm:px-4"
+            onClick={handleSelectAll}
+            disabled={isLoading || searchResults.length === 0}
+          >
+            <CheckSquare className="h-4 w-4 text-primary" />
+            <span className="text-[10px] sm:text-xs">Select All</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="col-span-2 h-9 gap-2 rounded-none border-destructive/20 font-black tracking-tighter uppercase hover:bg-destructive/10 sm:col-auto sm:h-10 sm:px-4"
+            onClick={handleClearAll}
+          >
+            <RefreshCcw className="h-4 w-4 text-destructive" />
+            <span className="text-[10px] sm:text-xs">Undo All</span>
+          </Button>
         </div>
       </div>
 
@@ -268,6 +452,11 @@ export const MediaSelectionArea: React.FC<MediaSelectionAreaProps> = ({
                 onToggleExpand={toggleExpand}
                 rating={getMediaRating(media.id)}
                 onUpdateRating={updateSelectionRating}
+                status={getMediaStatus(media.id)}
+                onUpdateStatus={updateSelectionStatus}
+                progress={getMediaProgress(media.id)}
+                onUpdateProgress={updateSelectionProgress}
+                totalEpisodes={getMediaTotalEpisodes(media.id)}
                 isMediaSelected={isMediaSelected}
                 handleToggleSelection={handleToggleSelection}
                 getMediaRating={getMediaRating}

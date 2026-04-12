@@ -15,12 +15,23 @@ export type EntryStatus =
   | "completed"
   | "error"
 
+export type AniListStatus =
+  | "CURRENT"
+  | "PLANNING"
+  | "COMPLETED"
+  | "REPEATING"
+  | "PAUSED"
+  | "DROPPED"
+
 export interface Selection {
   id: number
   title: string
   image: string
   rating: number
   status: "pending" | "syncing" | "completed" | "error"
+  anilistStatus: AniListStatus
+  progress: number
+  totalEpisodes: number | null
   error?: string
 }
 
@@ -30,6 +41,7 @@ export interface AnimeEntry {
   rating: number
   selections: Selection[]
   status: EntryStatus
+  isManual?: boolean
   error?: string
 }
 
@@ -60,29 +72,33 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       const parsed = JSON.parse(saved)
-      // Migration logic for old single-selection format
       return parsed.map((entry: any) => {
-        if (!entry.selections) {
-          const selections: Selection[] = []
-          if (entry.selectedMediaId) {
-            selections.push({
-              id: entry.selectedMediaId,
-              title: entry.selectedMediaTitle || entry.name,
-              image: entry.selectedMediaImage || "",
-              rating: entry.rating || 0,
-              status: entry.status === "completed" ? "completed" : "pending",
-            })
-          }
-          return {
-            originalLine: entry.originalLine || "",
-            name: entry.name || "",
+        const selections = (entry.selections || []).map((s: any) => ({
+          ...s,
+          anilistStatus: s.anilistStatus || "COMPLETED",
+          progress: s.progress ?? 0,
+          totalEpisodes: s.totalEpisodes ?? null,
+        }))
+
+        // Migration logic for old single-selection format
+        if (!entry.selections && entry.selectedMediaId) {
+          selections.push({
+            id: entry.selectedMediaId,
+            title: entry.selectedMediaTitle || entry.name,
+            image: entry.selectedMediaImage || "",
             rating: entry.rating || 0,
-            selections,
-            status: entry.status || "pending",
-            error: entry.error,
-          }
+            status: entry.status === "completed" ? "completed" : "pending",
+            anilistStatus: "COMPLETED",
+            progress: 0,
+            totalEpisodes: null,
+          })
         }
-        return entry
+
+        return {
+          ...entry,
+          selections,
+          status: entry.status || "pending",
+        }
       })
     } catch (e) {
       console.error("Failed to parse entries from localStorage", e)
@@ -113,6 +129,7 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
     const initializedEntries = newEntries.map((e) => ({
       ...e,
       selections: e.selections || [],
+      isManual: e.isManual ?? false,
     }))
     setEntriesState(initializedEntries)
   }, [])
