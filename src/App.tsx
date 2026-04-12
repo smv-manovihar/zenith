@@ -8,8 +8,7 @@ import {
 import { Navbar } from "./components/Navbar"
 import { useProgress } from "./components/ProgressProvider"
 import { TooltipProvider } from "./components/ui/tooltip"
-import { Loader2 } from "lucide-react"
-
+import LoadingScreen from "./components/LoadingScreen"
 // Lazy load views for code splitting
 const Home = lazy(() => import("./views/Home"))
 const Import = lazy(() => import("./views/Import"))
@@ -17,16 +16,7 @@ const Review = lazy(() => import("./views/Review"))
 const Sync = lazy(() => import("./views/Sync"))
 const AuthCallback = lazy(() => import("./views/AuthCallback"))
 
-const LoadingFallback = () => (
-  <div className="flex min-h-[50vh] w-full items-center justify-center">
-    <div className="flex flex-col items-center gap-4">
-      <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
-      <p className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase">
-        Loading Zenith...
-      </p>
-    </div>
-  </div>
-)
+const LoadingFallback = () => <LoadingScreen message="Loading Zenith" />
 
 function App() {
   const { token } = useProgress()

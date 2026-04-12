@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   Layers,
   Edit2,
@@ -17,6 +18,7 @@ import { queryAniList, SEARCH_ANIME_QUERY } from "@/lib/anilist"
 import { MediaCard } from "./MediaCard"
 import { normalizeTitle } from "@/lib/utils"
 import { ReviewSidebar } from "./ReviewSidebar"
+import { MediaCardSkeleton } from "./MediaCardSkeleton"
 import {
   Tooltip,
   TooltipContent,
@@ -433,37 +435,49 @@ export const MediaSelectionArea: React.FC<MediaSelectionAreaProps> = ({
 
       <div className="p-3 sm:p-8">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center gap-4 py-24">
-            <Layers className="h-12 w-12 animate-pulse text-primary" />
-            <p className="text-xs font-black tracking-[0.3em] text-muted-foreground uppercase">
-              Searching AniList...
-            </p>
+          <div className="grid gap-6">
+            {[1, 2, 3].map((i) => (
+              <MediaCardSkeleton key={i} />
+            ))}
           </div>
         ) : (
           <div className="grid gap-6">
-            {searchResults.map((media: any) => (
-              <MediaCard
-                key={media.id}
-                media={media}
-                isSelected={isMediaSelected(media.id)}
-                onSelect={handleToggleSelection}
-                hasRelations={media.relations?.edges?.length > 0}
-                isExpanded={expandedMediaIds.has(media.id)}
-                onToggleExpand={toggleExpand}
-                rating={getMediaRating(media.id)}
-                onUpdateRating={updateSelectionRating}
-                status={getMediaStatus(media.id)}
-                onUpdateStatus={updateSelectionStatus}
-                progress={getMediaProgress(media.id)}
-                onUpdateProgress={updateSelectionProgress}
-                totalEpisodes={getMediaTotalEpisodes(media.id)}
-                isMediaSelected={isMediaSelected}
-                handleToggleSelection={handleToggleSelection}
-                getMediaRating={getMediaRating}
-                updateSelectionRating={updateSelectionRating}
-                onViewDetails={onViewDetails}
-              />
-            ))}
+            <AnimatePresence mode="popLayout">
+              {searchResults.map((media: any, index: number) => (
+                <motion.div
+                  key={media.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ 
+                    duration: 0.4, 
+                    delay: index * 0.05,
+                    ease: "easeOut" 
+                  }}
+                >
+                  <MediaCard
+                    media={media}
+                    isSelected={isMediaSelected(media.id)}
+                    onSelect={handleToggleSelection}
+                    hasRelations={media.relations?.edges?.length > 0}
+                    isExpanded={expandedMediaIds.has(media.id)}
+                    onToggleExpand={toggleExpand}
+                    rating={getMediaRating(media.id)}
+                    onUpdateRating={updateSelectionRating}
+                    status={getMediaStatus(media.id)}
+                    onUpdateStatus={updateSelectionStatus}
+                    progress={getMediaProgress(media.id)}
+                    onUpdateProgress={updateSelectionProgress}
+                    totalEpisodes={getMediaTotalEpisodes(media.id)}
+                    isMediaSelected={isMediaSelected}
+                    handleToggleSelection={handleToggleSelection}
+                    getMediaRating={getMediaRating}
+                    updateSelectionRating={updateSelectionRating}
+                    onViewDetails={onViewDetails}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
 
             {searchResults.length === 0 && (
               <div className="space-y-8 rounded-none border-2 border-dashed bg-muted/5 py-24 text-center">

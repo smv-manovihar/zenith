@@ -12,9 +12,21 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export const Navbar: React.FC = () => {
-  const { token, setToken } = useProgress()
+  const { token, setToken, user } = useProgress()
   const { theme, setTheme } = useTheme()
   const location = useLocation()
   const navigate = useNavigate()
@@ -119,22 +131,46 @@ export const Navbar: React.FC = () => {
             </Tooltip>
 
             {token ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    size="sm"
-                    onClick={handleLogout}
-                    className="gap-2"
+                    className="relative h-10 w-10 gap-0 rounded-full p-0 overflow-hidden hover:bg-primary/5 active:scale-95 transition-all ring-offset-background focus-visible:outline-none focus-visible:ring-2"
                   >
-                    <LogOut className="h-4 w-4" />
-                    <span className="hidden sm:inline">Logout</span>
+                    <Avatar className="h-full w-full border-2 border-primary/20 transition-transform group-hover:scale-105">
+                      <AvatarImage src={user?.avatar} />
+                      <AvatarFallback className="bg-primary/10 font-bold text-primary">
+                        {user?.name?.charAt(0).toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" align="end">
-                  Logout of Zenith
-                </TooltipContent>
-              </Tooltip>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 mt-2 rounded-2xl border-primary/10 bg-background/95 backdrop-blur-xl shadow-2xl p-2 pb-1">
+                  <div className="flex flex-col items-center gap-3 p-4 pt-6 text-center">
+                    <Avatar className="h-20 w-20 border-4 border-primary/10 shadow-xl">
+                      <AvatarImage src={user?.avatar} />
+                      <AvatarFallback className="text-2xl bg-primary/10 font-black text-primary">
+                        {user?.name?.charAt(0).toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="space-y-1">
+                      <p className="text-xl font-black tracking-tight leading-none truncate max-w-[200px]">
+                        {user?.name || "User"}
+                      </p>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator className="mx-2 bg-primary/5" />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="flex h-12 items-center gap-3 px-4 focus:bg-destructive/10 focus:text-destructive cursor-pointer rounded-xl transition-all"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
+                      <LogOut className="h-4 w-4" />
+                    </div>
+                    <span className="font-black text-[10px] uppercase tracking-widest">Sign Out from Zenith</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               location.pathname !== "/" && (
                 <span className="text-sm text-muted-foreground">

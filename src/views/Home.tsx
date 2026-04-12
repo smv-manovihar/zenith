@@ -63,18 +63,18 @@ const Home: React.FC = () => {
 
         <div className="flex flex-col items-center gap-6 pt-6">
           {isLocal && isConfigMissing ? (
-            <div className="max-w-md space-y-4 rounded-3xl border border-destructive/20 bg-destructive/5 p-6">
+            <div className="max-w-md space-y-4 rounded-none border border-destructive/20 bg-destructive/5 p-6">
               <div className="flex items-center justify-center gap-2 text-xs font-bold tracking-widest text-destructive uppercase">
                 <AlertTriangle className="h-4 w-4" />
                 Configuration Required
               </div>
               <p className="text-sm text-muted-foreground">
                 Please set your{" "}
-                <code className="rounded bg-destructive/10 px-2 py-0.5 text-destructive">
+                <code className="rounded-none bg-destructive/10 px-2 py-0.5 text-destructive">
                   VITE_ANILIST_CLIENT_ID
                 </code>{" "}
                 in the{" "}
-                <code className="rounded bg-destructive/10 px-2 py-0.5 text-destructive">
+                <code className="rounded-none bg-destructive/10 px-2 py-0.5 text-destructive">
                   .env
                 </code>{" "}
                 file to enable Zenith.
@@ -93,7 +93,7 @@ const Home: React.FC = () => {
               {!token ? (
                 <Button
                   size="lg"
-                  className="group h-16 gap-3 rounded-2xl px-10 text-xl font-black shadow-2xl shadow-primary/30 transition-all hover:scale-105 active:scale-95"
+                  className="group h-16 gap-3 rounded-none px-10 text-xl font-black shadow-2xl shadow-primary/30 transition-all hover:scale-105 active:scale-95"
                   onClick={handleLogin}
                 >
                   <LogIn className="h-6 w-6 transition-transform group-hover:rotate-12" />
@@ -104,7 +104,7 @@ const Home: React.FC = () => {
                 <Button
                   size="lg"
                   variant="secondary"
-                  className="h-16 gap-3 rounded-2xl border-2 border-primary/10 px-10 text-xl font-black transition-all hover:bg-primary/5"
+                  className="h-16 gap-3 rounded-none border-2 border-primary/10 px-10 text-xl font-black transition-all hover:bg-primary/5"
                   onClick={() => navigate("/import")}
                 >
                   Continue
@@ -132,7 +132,7 @@ const Home: React.FC = () => {
           ref={guideRef}
           className="animate-in duration-500 fade-in slide-in-from-top-8"
         >
-          <Card className="overflow-hidden rounded-[2rem] border-primary/10 bg-card/30 shadow-2xl backdrop-blur-xl">
+          <Card className="overflow-hidden rounded-none border-primary/10 bg-card/30 shadow-2xl backdrop-blur-xl">
             <CardHeader className="border-b border-primary/10 py-8">
               <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                 <div className="space-y-1">
@@ -157,7 +157,7 @@ const Home: React.FC = () => {
               <div className="space-y-8">
                 <section className="space-y-4">
                   <h3 className="flex items-center gap-2 text-lg font-bold">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-none bg-primary text-xs text-primary-foreground">
                       1
                     </span>
                     Create Developer App
@@ -179,7 +179,7 @@ const Home: React.FC = () => {
 
                 <section className="space-y-4">
                   <h3 className="flex items-center gap-2 text-lg font-bold">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-none bg-primary text-xs text-primary-foreground">
                       2
                     </span>
                     Set Redirect URI
@@ -188,14 +188,23 @@ const Home: React.FC = () => {
                     During app creation, set the{" "}
                     <strong className="text-foreground">Redirect URI</strong>{" "}
                     to: <br />
-                    <code className="mt-2 block w-fit rounded-md bg-muted px-2 py-1 text-xs text-primary">
+                    <code className="mt-2 block w-fit rounded-none bg-muted px-2 py-1 text-xs font-bold text-primary">
                       http://localhost:5173/callback
                     </code>
+                    <span className="mt-1 block text-[10px] font-bold tracking-tighter text-muted-foreground uppercase">
+                      Or for production:
+                    </span>
+                    <code className="mt-1 block w-fit rounded-none bg-muted px-2 py-1 font-mono text-xs text-primary">
+                      https://&lt;your-domain&gt;/callback
+                    </code>
+                    <span className="mt-1 block text-[10px] font-black tracking-tighter text-destructive uppercase">
+                      Important: Must include http:// or https:// protocol
+                    </span>
                   </p>
                 </section>
                 <section className="space-y-4">
                   <h3 className="flex items-center gap-2 text-lg font-bold">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-none bg-primary text-xs text-primary-foreground">
                       3
                     </span>
                     Get Your Credentials
@@ -209,14 +218,14 @@ const Home: React.FC = () => {
 
                 <section className="space-y-4">
                   <h3 className="flex items-center gap-2 text-lg font-bold">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-none bg-primary text-xs text-primary-foreground">
                       4
                     </span>
                     Deployment
                   </h3>
                   <p className="text-sm leading-relaxed text-muted-foreground">
                     When deploying (to Vercel, Netlify, etc.), add{" "}
-                    <code className="rounded bg-muted px-1 text-primary">
+                    <code className="rounded-none bg-muted px-1 text-primary">
                       VITE_ANILIST_CLIENT_ID
                     </code>{" "}
                     to your provider's Environment Variables and add your
@@ -227,7 +236,7 @@ const Home: React.FC = () => {
               </div>
 
               <div className="space-y-6">
-                <div className="space-y-4 rounded-3xl border border-white/5 bg-black/40 p-6">
+                <div className="space-y-4 rounded-none border border-white/5 bg-black/40 p-6">
                   <div className="flex items-center gap-2 border-b border-white/5 pb-4 text-xs font-bold tracking-widest text-muted-foreground uppercase">
                     <Info className="h-4 w-4 text-primary" />
                     Environment Config (.env)
@@ -239,7 +248,7 @@ VITE_ANILIST_CLIENT_ID = YOUR_CLIENT_ID
                   </pre>
                 </div>
 
-                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                <div className="rounded-none border border-primary/20 bg-primary/5 p-4">
                   <p className="text-xs leading-tight font-medium text-primary">
                     <strong>Pro Tip:</strong> After updating the .env file, you
                     may need to restart your development server for the changes
@@ -273,9 +282,9 @@ VITE_ANILIST_CLIENT_ID = YOUR_CLIENT_ID
         ].map((f, i) => (
           <div
             key={i}
-            className="group rounded-[2rem] border bg-card/20 p-6 transition-all hover:bg-card/40 hover:shadow-2xl hover:shadow-primary/5 sm:p-8"
+            className="group rounded-none border bg-card/20 p-6 transition-all hover:bg-card/40 hover:shadow-2xl hover:shadow-primary/5 sm:p-8"
           >
-            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-110 group-hover:rotate-3 sm:mb-6 sm:h-12 sm:w-12 sm:rounded-2xl">
+            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-none bg-primary/10 text-primary transition-transform group-hover:scale-110 group-hover:rotate-3 sm:mb-6 sm:h-12 sm:w-12">
               {f.icon}
             </div>
             <h3 className="mb-3 text-lg font-bold sm:text-xl">{f.title}</h3>

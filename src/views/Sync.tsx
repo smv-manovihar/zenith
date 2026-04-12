@@ -1,4 +1,5 @@
 import { useState, useMemo, type FC } from "react"
+import { motion } from "framer-motion"
 import {
   useProgress,
   type AnimeEntry,
@@ -179,7 +180,9 @@ const SyncRowComponent = ({
                     onChange={handleProgressChange}
                   />
                   {selection.totalEpisodes && (
-                    <span className="opacity-40">/ {selection.totalEpisodes}</span>
+                    <span className="opacity-40">
+                      / {selection.totalEpisodes}
+                    </span>
                   )}
                 </div>
               )}
@@ -403,7 +406,25 @@ const Sync: FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 p-3 sm:p-5">
-            <Progress value={syncProgress} className="h-3" />
+            <div className="relative">
+              <Progress value={syncProgress} className="h-3 overflow-hidden" />
+              {isSyncing && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{
+                    opacity: 1,
+                    x: ["-100%", "100%"],
+                  }}
+                  className="absolute inset-0 bg-linear-to-r from-transparent via-primary/20 to-transparent"
+                  style={{ width: "100%" }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                />
+              )}
+            </div>
 
             <div className="space-y-2">
               <h4 className="text-[9px] font-bold tracking-wider text-muted-foreground uppercase sm:text-[10px]">

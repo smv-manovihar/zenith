@@ -137,3 +137,15 @@ export const SAVE_MEDIA_LIST_ENTRY = `
     }
   }
 `;
+
+export const GET_VIEWER_QUERY = `
+  query {
+    Viewer {
+      id
+      name
+      avatar {
+        large
+      }
+    }
+  }
+`;

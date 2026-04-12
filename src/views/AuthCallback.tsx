@@ -1,7 +1,7 @@
 import React, { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useProgress } from "@/components/ProgressProvider"
-import { Loader2 } from "lucide-react"
+import LoadingScreen from "@/components/LoadingScreen"
 
 const AuthCallback: React.FC = () => {
   const { setToken } = useProgress()
@@ -22,14 +22,7 @@ const AuthCallback: React.FC = () => {
     }
   }, [setToken, navigate])
 
-  return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-      <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      <p className="animate-pulse text-xl font-medium">
-        Authenticating with AniList...
-      </p>
-    </div>
-  )
+  return <LoadingScreen message="Authenticating with AniList" />
 }
 
 export default AuthCallback

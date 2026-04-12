@@ -6,6 +6,8 @@ import React, {
   useMemo,
   useCallback,
 } from "react"
+import { queryAniList, GET_VIEWER_QUERY } from "@/lib/anilist"
+import { toast } from "sonner"
 
 export type EntryStatus =
   | "pending"
@@ -35,6 +37,11 @@ export interface Selection {
   error?: string
 }
 
+export interface UserData {
+  name: string
+  avatar: string
+}
+
 export interface AnimeEntry {
   originalLine: string
   name: string
@@ -56,6 +63,7 @@ interface ProgressContextType {
   ) => void
   token: string | null
   setToken: (token: string | null) => void
+  user: UserData | null
   clientId: string
 }
 
@@ -109,7 +117,33 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
   const [token, setTokenState] = useState<string | null>(() =>
     localStorage.getItem("anilist_updator_token")
   )
+  const [user, setUser] = useState<UserData | null>(() => {
+    const saved = localStorage.getItem("anilist_updator_user")
+    return saved ? JSON.parse(saved) : null
+  })
   const clientId = import.meta.env.VITE_ANILIST_CLIENT_ID || ""
+
+  useEffect(() => {
+    if (token && !user) {
+      const fetchUser = async () => {
+        try {
+          const response = await queryAniList(GET_VIEWER_QUERY, {}, token)
+          if (response.data?.Viewer) {
+            const userData = {
+              name: response.data.Viewer.name,
+              avatar: response.data.Viewer.avatar.large,
+            }
+            setUser(userData)
+            localStorage.setItem("anilist_updator_user", JSON.stringify(userData))
+          }
+        } catch (error) {
+          console.error("Failed to fetch user data:", error)
+          toast.error("Failed to fetch AniList profile")
+        }
+      }
+      fetchUser()
+    }
+  }, [token, user])
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -121,7 +155,11 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     if (token) localStorage.setItem("anilist_updator_token", token)
-    else localStorage.removeItem("anilist_updator_token")
+    else {
+      localStorage.removeItem("anilist_updator_token")
+      localStorage.removeItem("anilist_updator_user")
+      setUser(null)
+    }
   }, [token])
 
   const setEntries = useCallback((newEntries: AnimeEntry[]) => {
@@ -172,6 +210,7 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
       updateSelection,
       token,
       setToken,
+      user,
       clientId,
     }),
     [
@@ -181,6 +220,7 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
       updateSelection,
       token,
       setToken,
+      user,
       clientId,
     ]
   )
