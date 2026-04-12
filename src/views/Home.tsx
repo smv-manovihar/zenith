@@ -23,7 +23,7 @@ import { useNavigate } from "react-router-dom"
 import { Badge } from "@/components/ui/badge"
 
 const Home: React.FC = () => {
-  const { clientId, token } = useProgress()
+  const { clientId, token, entries } = useProgress()
   const [showGuide, setShowGuide] = useState(false)
   const guideRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
@@ -93,7 +93,7 @@ const Home: React.FC = () => {
               {!token ? (
                 <Button
                   size="lg"
-                  className="group h-16 gap-3 rounded-none px-10 text-xl font-black shadow-2xl shadow-primary/30 transition-all hover:scale-105 active:scale-95"
+                  className="group h-16 gap-3 px-10 text-xl font-black shadow-2xl shadow-primary/30 transition-all hover:scale-105 active:scale-95"
                   onClick={handleLogin}
                 >
                   <LogIn className="h-6 w-6 transition-transform group-hover:rotate-12" />
@@ -104,8 +104,8 @@ const Home: React.FC = () => {
                 <Button
                   size="lg"
                   variant="secondary"
-                  className="h-16 gap-3 rounded-none border-2 border-primary/10 px-10 text-xl font-black transition-all hover:bg-primary/5"
-                  onClick={() => navigate("/import")}
+                  className="h-16 gap-3 border-2 border-primary/80 px-10 text-xl font-black"
+                  onClick={() => navigate(entries.length > 0 ? "/review" : "/import")}
                 >
                   Continue
                   <ChevronRight className="h-5 w-5 opacity-30" />
