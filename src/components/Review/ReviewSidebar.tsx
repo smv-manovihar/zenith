@@ -83,6 +83,11 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
     [entries, currentIndex, onSelectEntry, onUpdateRating]
   )
 
+  // Calculate local index within the potentially filtered entries list
+  const localIndex = useMemo(() => {
+    return entries.findIndex((e) => e.originalIndex === currentIndex)
+  }, [entries, currentIndex])
+
   // 1. Force scroll on mount or when currentIndex changes
   const [hasScrolledInitial, setHasScrolledInitial] = useState(false)
   const lastListInstance = useRef<any>(null)
@@ -93,11 +98,13 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
     if (node) {
       // If it's a new instance (mount/drawer open)
       if (node !== lastListInstance.current) {
-        node.scrollToRow({
-          index: currentIndex,
-          align: "center", // Center instead of smart
-          behavior: "auto", // Instant scroll on load/open
-        })
+        if (localIndex !== -1 && localIndex < entries.length) {
+          node.scrollToRow({
+            index: localIndex,
+            align: "center",
+            behavior: "auto",
+          })
+        }
         lastListInstance.current = node
         setHasScrolledInitial(true)
       }
@@ -110,14 +117,19 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
 
   // Effect for subsequent currentIndex changes
   useEffect(() => {
-    if (listRef.current && hasScrolledInitial && currentIndex >= 0) {
+    if (
+      listRef.current &&
+      hasScrolledInitial &&
+      localIndex !== -1 &&
+      localIndex < entries.length
+    ) {
       listRef.current.scrollToRow({
-        index: currentIndex,
-        align: "center", // Center instead of smart
+        index: localIndex,
+        align: "center",
         behavior: "smooth",
       })
     }
-  }, [currentIndex, hasScrolledInitial])
+  }, [localIndex, hasScrolledInitial, entries.length])
 
   if (isMobile) {
     return (
