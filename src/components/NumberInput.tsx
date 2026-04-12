@@ -1,4 +1,4 @@
-import React from "react"
+import { type FC, type MouseEvent, type ChangeEvent } from "react"
 import { Minus, Plus } from "lucide-react"
 import { Button } from "./ui/button"
 
@@ -11,7 +11,7 @@ interface NumberInputProps {
   className?: string
 }
 
-export const NumberInput: React.FC<NumberInputProps> = ({
+export const NumberInput: FC<NumberInputProps> = ({
   value,
   onChange,
   min = 0,
@@ -19,19 +19,19 @@ export const NumberInput: React.FC<NumberInputProps> = ({
   step = 0.5,
   className = "",
 }) => {
-  const handleDecrement = (e: React.MouseEvent) => {
+  const handleDecrement = (e: MouseEvent) => {
     e.stopPropagation()
     const newValue = Math.max(min, value - step)
     onChange(newValue)
   }
 
-  const handleIncrement = (e: React.MouseEvent) => {
+  const handleIncrement = (e: MouseEvent) => {
     e.stopPropagation()
     const newValue = Math.min(max, value + step)
     onChange(newValue)
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value) || 0
     onChange(val)
   }

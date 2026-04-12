@@ -1,4 +1,4 @@
-import React from "react"
+import { memo, type CSSProperties } from "react"
 import { Star } from "lucide-react"
 import { NumberInput } from "@/components/NumberInput"
 
@@ -8,10 +8,10 @@ interface SidebarEntryProps {
   isActive: boolean
   onClick: () => void
   onUpdateRating?: (index: number, val: number) => void
-  style?: React.CSSProperties
+  style?: CSSProperties
 }
 
-export const SidebarEntry = React.memo<SidebarEntryProps>(
+export const SidebarEntry = memo<SidebarEntryProps>(
   ({ entry, idx, isActive, onClick, onUpdateRating, style }) => {
     return (
       <button

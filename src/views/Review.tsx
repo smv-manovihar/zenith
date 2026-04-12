@@ -12,7 +12,10 @@ import { MediaDetailsDialog } from "@/components/Review/MediaDetailsDialog"
 
 const Review: FC = () => {
   const { entries, updateEntry, token } = useProgress()
-  const [currentIndex, setCurrentIndex] = useState(0)
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    const firstUnresolved = entries.findIndex((e) => e.selections.length === 0)
+    return firstUnresolved === -1 ? 0 : firstUnresolved
+  })
   const [selectedDetailsMedia, setSelectedDetailsMedia] = useState<any>(null)
   const navigate = useNavigate()
 

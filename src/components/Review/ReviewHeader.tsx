@@ -1,4 +1,4 @@
-import React from "react"
+import { type FC } from "react"
 import { AlertCircle } from "lucide-react"
 
 interface ReviewHeaderProps {
@@ -7,7 +7,7 @@ interface ReviewHeaderProps {
   entriesWithMissingScores: number
 }
 
-export const ReviewHeader: React.FC<ReviewHeaderProps> = ({
+export const ReviewHeader: FC<ReviewHeaderProps> = ({
   entriesCount,
   resolvedCount,
   entriesWithMissingScores,

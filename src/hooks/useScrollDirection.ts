@@ -10,6 +10,14 @@ export function useScrollDirection() {
 
     const updateScrollDirection = () => {
       const scrollY = window.pageYOffset
+      
+      // Always show navbar at the very top
+      if (scrollY <= 10) {
+        setScrollDirection("up")
+        lastScrollY = scrollY
+        return
+      }
+
       const direction = scrollY > lastScrollY ? "down" : "up"
       if (
         direction !== scrollDirection &&

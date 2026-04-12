@@ -1,4 +1,4 @@
-import React from "react"
+import { type FC } from "react"
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,7 @@ interface MediaDetailsDialogProps {
   onClose: () => void
 }
 
-export const MediaDetailsDialog: React.FC<MediaDetailsDialogProps> = ({
+export const MediaDetailsDialog: FC<MediaDetailsDialogProps> = ({
   media,
   onClose,
 }) => {

@@ -1,4 +1,4 @@
-import React from "react"
+import { type FC } from "react"
 import { ChevronRight, ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,7 +15,7 @@ interface ReviewNavigationProps {
   onPrev: () => void
 }
 
-export const ReviewNavigation: React.FC<ReviewNavigationProps> = ({
+export const ReviewNavigation: FC<ReviewNavigationProps> = ({
   currentIndex,
   entriesCount,
   currentEntrySelectionsCount,

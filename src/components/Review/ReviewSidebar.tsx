@@ -1,5 +1,5 @@
-import React from "react"
-import { List, type RowComponentProps } from "react-window"
+import { useRef, useEffect, useMemo, useCallback, useState } from "react"
+import { List, type RowComponentProps } from "react-window" // Note: Ensure types match your wrapper
 import { Library, Menu } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import {
@@ -63,7 +63,10 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
   onUpdateRating,
   isMobile = false,
 }) => {
-  const rowProps = React.useMemo(
+  // 1. Create the list reference
+  const listRef = useRef<any>(null)
+
+  const rowProps = useMemo(
     () => ({
       entries,
       currentIndex,
@@ -72,6 +75,42 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
     }),
     [entries, currentIndex, onSelectEntry, onUpdateRating]
   )
+
+  // 1. Force scroll on mount or when currentIndex changes
+  const [hasScrolledInitial, setHasScrolledInitial] = useState(false)
+  const lastListInstance = useRef<any>(null)
+
+  // Callback ref to handle when the List component mounts/unmounts
+  const handleListRef = useCallback((node: any) => {
+    listRef.current = node
+    if (node) {
+      // If it's a new instance (mount/drawer open)
+      if (node !== lastListInstance.current) {
+        node.scrollToRow({
+          index: currentIndex,
+          align: "center", // Center instead of smart
+          behavior: "auto", // Instant scroll on load/open
+        })
+        lastListInstance.current = node
+        setHasScrolledInitial(true)
+      }
+    } else {
+      // Reset when unmounted
+      setHasScrolledInitial(false)
+      lastListInstance.current = null
+    }
+  }, [currentIndex])
+
+  // Effect for subsequent currentIndex changes
+  useEffect(() => {
+    if (listRef.current && hasScrolledInitial && currentIndex >= 0) {
+      listRef.current.scrollToRow({
+        index: currentIndex,
+        align: "center", // Center instead of smart
+        behavior: "smooth",
+      })
+    }
+  }, [currentIndex, hasScrolledInitial])
 
   if (isMobile) {
     return (
@@ -95,6 +134,7 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
           </DrawerHeader>
           <div className="p-2">
             <List
+              listRef={handleListRef} // Use the callback ref
               style={{ height: 500, width: "100%" }}
               rowCount={entries.length}
               rowHeight={96}
@@ -120,6 +160,7 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
       <CardContent className="p-0">
         <div className="p-2">
           <List
+            listRef={handleListRef} // Use the callback ref
             style={{ height: 600, width: "100%" }}
             rowCount={entries.length}
             rowHeight={96}
