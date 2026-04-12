@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type FC } from "react"
+import { useState, useEffect, useCallback, useRef, type FC } from "react"
 import { AlertCircle } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useProgress } from "@/components/ProgressProvider"
@@ -12,6 +12,7 @@ import { MediaDetailsDialog } from "@/components/Review/MediaDetailsDialog"
 
 const Review: FC = () => {
   const { entries, updateEntry, token } = useProgress()
+  const selectionAreaRef = useRef<HTMLDivElement>(null)
   const [currentIndex, setCurrentIndex] = useState(() => {
     const firstUnresolved = entries.findIndex((e) => e.selections.length === 0)
     return firstUnresolved === -1 ? 0 : firstUnresolved
@@ -24,6 +25,14 @@ const Review: FC = () => {
       navigate("/")
     }
   }, [token, navigate])
+
+  // Scroll to selection area when active entry changes
+  useEffect(() => {
+    if (selectionAreaRef.current) {
+      const top = selectionAreaRef.current.getBoundingClientRect().top + window.scrollY - 100
+      window.scrollTo({ top, behavior: "smooth" })
+    }
+  }, [currentIndex])
 
   const currentEntry = entries[currentIndex]
 
@@ -86,7 +95,7 @@ const Review: FC = () => {
         </div>
 
         {/* Right Side: Media Selection Area */}
-        <div className="space-y-6 lg:col-span-8">
+        <div ref={selectionAreaRef} className="space-y-6 lg:col-span-8">
           <MediaSelectionArea
             currentEntry={currentEntry}
             currentIndex={currentIndex}
