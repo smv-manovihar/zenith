@@ -41,6 +41,9 @@ const Home: React.FC = () => {
   }
 
   const isConfigMissing = !clientId
+  const isLocal =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
 
   return (
     <div className="mx-auto max-w-5xl animate-in space-y-16 px-4 py-12 duration-1000 fade-in">
@@ -57,7 +60,7 @@ const Home: React.FC = () => {
         </div>
 
         <div className="flex flex-col items-center gap-6 pt-6">
-          {isConfigMissing ? (
+          {isLocal && isConfigMissing ? (
             <div className="max-w-md space-y-4 rounded-3xl border border-destructive/20 bg-destructive/5 p-6">
               <div className="flex items-center justify-center gap-2 text-xs font-bold tracking-widest text-destructive uppercase">
                 <AlertTriangle className="h-4 w-4" />
@@ -109,7 +112,7 @@ const Home: React.FC = () => {
             </div>
           )}
 
-          {!token && (
+          {!token && isLocal && (
             <button
               onClick={() => setShowGuide(!showGuide)}
               className="flex items-center gap-2 text-sm font-bold tracking-widest text-muted-foreground uppercase transition-colors hover:text-primary"
@@ -122,7 +125,7 @@ const Home: React.FC = () => {
       </div>
 
       {/* Setup Guide Section */}
-      {showGuide && (
+      {isLocal && showGuide && (
         <div
           ref={guideRef}
           className="animate-in duration-500 fade-in slide-in-from-top-8"
@@ -188,7 +191,6 @@ const Home: React.FC = () => {
                     </code>
                   </p>
                 </section>
-
                 <section className="space-y-4">
                   <h3 className="flex items-center gap-2 text-lg font-bold">
                     <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
@@ -198,9 +200,25 @@ const Home: React.FC = () => {
                   </h3>
                   <p className="text-sm leading-relaxed text-muted-foreground">
                     Copy the{" "}
-                    <strong className="text-foreground">Client ID</strong> and{" "}
-                    <strong className="text-foreground">Client Secret</strong>{" "}
-                    once your app is created.
+                    <strong className="text-foreground">Client ID</strong> once
+                    your app is created.
+                  </p>
+                </section>
+
+                <section className="space-y-4">
+                  <h3 className="flex items-center gap-2 text-lg font-bold">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                      4
+                    </span>
+                    Deployment
+                  </h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    When deploying (to Vercel, Netlify, etc.), add{" "}
+                    <code className="rounded bg-muted px-1 text-primary">
+                      VITE_ANILIST_CLIENT_ID
+                    </code>{" "}
+                    to your provider's Environment Variables and add your
+                    production URL to the Redirect URIs in the AniList dashboard.
                   </p>
                 </section>
               </div>
@@ -214,14 +232,8 @@ const Home: React.FC = () => {
                   <pre className="overflow-x-auto font-mono text-xs leading-relaxed text-emerald-400">
                     {`# .env file in project root
 VITE_ANILIST_CLIENT_ID = YOUR_CLIENT_ID
-VITE_ANILIST_CLIENT_SECRET = YOUR_CLIENT_SECRET
 `}
                   </pre>
-                  <p className="text-[10px] leading-relaxed text-muted-foreground italic">
-                    * The secret is provided for completeness, but this
-                    application uses the Implicit Grant Flow which only requires
-                    the ID.
-                  </p>
                 </div>
 
                 <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
