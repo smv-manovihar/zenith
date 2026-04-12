@@ -16,7 +16,7 @@ createRoot(document.getElementById("root")!).render(
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         <ProgressProvider>
           <App />
-          <Toaster />
+          <Toaster position="top-center" />
         </ProgressProvider>
       </ThemeProvider>
     </QueryClientProvider>

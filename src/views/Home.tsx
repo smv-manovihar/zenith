@@ -16,7 +16,6 @@ import {
   ChevronRight,
   Terminal,
   ExternalLink,
-  ShieldCheck,
   AlertTriangle,
   Info,
 } from "lucide-react"
@@ -52,8 +51,8 @@ const Home: React.FC = () => {
             Sync Lists To <span className="text-primary">AniList</span>
           </h1>
           <p className="mx-auto max-w-2xl text-lg leading-relaxed font-medium text-muted-foreground">
-            A high-performance workspace for your AniList collection. Automated
-            search, related-show detection, and precision sync.
+            High-performance batch synchronization for your anime library.
+            Automated search, related-show detection, and precision sync.
           </p>
         </div>
 
@@ -103,8 +102,7 @@ const Home: React.FC = () => {
                   className="h-16 gap-3 rounded-2xl border-2 border-primary/10 px-10 text-xl font-black transition-all hover:bg-primary/5"
                   onClick={() => navigate("/import")}
                 >
-                  <ShieldCheck className="h-6 w-6 text-emerald-500" />
-                  Continue Workspace
+                  Continue
                   <ChevronRight className="h-5 w-5 opacity-30" />
                 </Button>
               )}
@@ -138,7 +136,8 @@ const Home: React.FC = () => {
                     Zenith Setup Guide
                   </CardTitle>
                   <CardDescription className="text-base">
-                    Everything you need to get the Zenith workspace running locally.
+                    Step-by-step instructions to initialize Zenith in your local
+                    environment.
                   </CardDescription>
                 </div>
                 <Badge
@@ -239,7 +238,7 @@ VITE_ANILIST_CLIENT_SECRET = YOUR_CLIENT_SECRET
       )}
 
       {/* Feature Grid */}
-      <div className="grid gap-8 pt-12 md:grid-cols-3">
+      <div className="grid gap-6 pt-12 sm:gap-8 md:grid-cols-3">
         {[
           {
             icon: <LayoutList className="h-6 w-6" />,
@@ -259,13 +258,13 @@ VITE_ANILIST_CLIENT_SECRET = YOUR_CLIENT_SECRET
         ].map((f, i) => (
           <div
             key={i}
-            className="group rounded-[2rem] border bg-card/20 p-8 transition-all hover:bg-card/40 hover:shadow-2xl hover:shadow-primary/5"
+            className="group rounded-[2rem] border bg-card/20 p-6 transition-all hover:bg-card/40 hover:shadow-2xl hover:shadow-primary/5 sm:p-8"
           >
-            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform group-hover:scale-110 group-hover:rotate-3">
+            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-110 group-hover:rotate-3 sm:mb-6 sm:h-12 sm:w-12 sm:rounded-2xl">
               {f.icon}
             </div>
-            <h3 className="mb-3 text-xl font-bold">{f.title}</h3>
-            <p className="text-sm leading-relaxed text-muted-foreground">
+            <h3 className="mb-3 text-lg font-bold sm:text-xl">{f.title}</h3>
+            <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
               {f.desc}
             </p>
           </div>

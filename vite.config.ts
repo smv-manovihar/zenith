@@ -11,4 +11,16 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-ui": ["framer-motion", "lucide-react", "sonner"],
+          "vendor-charts": ["recharts"],
+          "vendor-utils": ["axios", "@tanstack/react-query", "date-fns"],
+        },
+      },
+    },
+  },
 })

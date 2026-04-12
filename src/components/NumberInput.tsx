@@ -4,7 +4,7 @@ import { Button } from "./ui/button"
 
 interface NumberInputProps {
   value: number
-  onChange: (value: string) => void
+  onChange: (value: number) => void
   min?: number
   max?: number
   step?: number
@@ -22,17 +22,18 @@ export const NumberInput: React.FC<NumberInputProps> = ({
   const handleDecrement = (e: React.MouseEvent) => {
     e.stopPropagation()
     const newValue = Math.max(min, value - step)
-    onChange(newValue.toString())
+    onChange(newValue)
   }
 
   const handleIncrement = (e: React.MouseEvent) => {
     e.stopPropagation()
     const newValue = Math.min(max, value + step)
-    onChange(newValue.toString())
+    onChange(newValue)
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value)
+    const val = parseFloat(e.target.value) || 0
+    onChange(val)
   }
 
   return (
@@ -40,13 +41,13 @@ export const NumberInput: React.FC<NumberInputProps> = ({
       <Button
         variant="ghost"
         size="icon"
-        className="h-6 w-6 rounded-md hover:bg-primary/20 hover:text-primary transition-colors"
+        className="h-6 w-6 rounded-none transition-colors hover:bg-primary/20 hover:text-primary"
         onClick={handleDecrement}
         disabled={value <= min}
       >
         <Minus className="h-3 w-3" />
       </Button>
-      
+
       <input
         type="number"
         step={step}
@@ -55,13 +56,13 @@ export const NumberInput: React.FC<NumberInputProps> = ({
         value={value}
         onChange={handleChange}
         onClick={(e) => e.stopPropagation()}
-        className="w-10 border-none bg-transparent p-0 text-center text-sm font-black focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        className="w-10 [appearance:textfield] border-none bg-transparent p-0 text-center text-sm font-black focus:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
 
       <Button
         variant="ghost"
         size="icon"
-        className="h-6 w-6 rounded-md hover:bg-primary/20 hover:text-primary transition-colors"
+        className="h-6 w-6 rounded-none transition-colors hover:bg-primary/20 hover:text-primary"
         onClick={handleIncrement}
         disabled={value >= max}
       >

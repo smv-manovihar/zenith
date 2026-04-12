@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react"
 
 export type EntryStatus =
   | "pending"
@@ -30,12 +37,19 @@ interface ProgressContextType {
   entries: AnimeEntry[]
   setEntries: (entries: AnimeEntry[]) => void
   updateEntry: (index: number, updates: Partial<AnimeEntry>) => void
+  updateSelection: (
+    entryIndex: number,
+    selectionIndex: number,
+    updates: Partial<Selection>
+  ) => void
   token: string | null
   setToken: (token: string | null) => void
   clientId: string
 }
 
-const ProgressContext = createContext<ProgressContextType | undefined>(undefined)
+const ProgressContext = createContext<ProgressContextType | undefined>(
+  undefined
+)
 
 export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -112,6 +126,25 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
     []
   )
 
+  const updateSelection = useCallback(
+    (
+      entryIndex: number,
+      selectionIndex: number,
+      updates: Partial<Selection>
+    ) => {
+      setEntriesState((prev) =>
+        prev.map((entry, i) => {
+          if (i !== entryIndex) return entry
+          const newSelections = entry.selections.map((sel, j) =>
+            j === selectionIndex ? { ...sel, ...updates } : sel
+          )
+          return { ...entry, selections: newSelections }
+        })
+      )
+    },
+    []
+  )
+
   const setToken = useCallback((t: string | null) => setTokenState(t), [])
 
   const contextValue = useMemo(
@@ -119,11 +152,20 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
       entries,
       setEntries,
       updateEntry,
+      updateSelection,
       token,
       setToken,
       clientId,
     }),
-    [entries, setEntries, updateEntry, token, setToken, clientId]
+    [
+      entries,
+      setEntries,
+      updateEntry,
+      updateSelection,
+      token,
+      setToken,
+      clientId,
+    ]
   )
 
   return (
@@ -134,7 +176,8 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
 }
 
 export const useProgress = () => {
-  const context = useContext(ProgressContext);
-  if (!context) throw new Error('useProgress must be used within a ProgressProvider');
-  return context;
-};
+  const context = useContext(ProgressContext)
+  if (!context)
+    throw new Error("useProgress must be used within a ProgressProvider")
+  return context
+}

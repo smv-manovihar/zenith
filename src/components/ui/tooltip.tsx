@@ -5,29 +5,74 @@ import { Tooltip as TooltipPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 
-function TooltipProvider({
-  delayDuration = 0,
-  ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
-  return (
-    <TooltipPrimitive.Provider
-      data-slot="tooltip-provider"
-      delayDuration={delayDuration}
-      {...props}
-    />
-  )
-}
+const TooltipProvider = TooltipPrimitive.Provider
+
+const TooltipContext = React.createContext<{
+  isOpen: boolean
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
+} | null>(null)
 
 function Tooltip({
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
-  return <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+  const [isOpen, setIsOpen] = React.useState(false)
+
+  return (
+    <TooltipContext.Provider value={{ isOpen, setIsOpen }}>
+      <TooltipPrimitive.Root
+        data-slot="tooltip"
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        {...props}
+      />
+    </TooltipContext.Provider>
+  )
 }
 
 function TooltipTrigger({
+  className,
+  onTouchStart,
+  onTouchEnd,
+  onTouchCancel,
+  onContextMenu,
+  style,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
-  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
+  const context = React.useContext(TooltipContext)
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLButtonElement>) => {
+    timerRef.current = setTimeout(() => {
+      context?.setIsOpen(true)
+    }, 500) // 500ms long press threshold
+
+    if (onTouchStart) onTouchStart(e)
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLButtonElement>) => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    if (onTouchEnd) onTouchEnd(e)
+  }
+
+  return (
+    <TooltipPrimitive.Trigger
+      data-slot="tooltip-trigger"
+      className={cn("select-none", className)}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        context?.setIsOpen(true)
+        if (onContextMenu) onContextMenu(e)
+      }}
+      style={{
+        WebkitTouchCallout: "none",
+        ...style,
+      }}
+      {...props}
+    />
+  )
 }
 
 function TooltipContent({

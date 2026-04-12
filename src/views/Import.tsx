@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import { useState, useRef, useEffect, type FC, type ChangeEvent } from "react"
 import { useNavigate } from "react-router-dom"
 import { useProgress, type AnimeEntry } from "@/components/ProgressProvider"
 import { Button } from "@/components/ui/button"
@@ -20,14 +20,16 @@ import {
   AlertTriangle,
 } from "lucide-react"
 import { toast } from "sonner"
+import { AI_PROMPT } from "@/lib/utils"
 
-const Import: React.FC = () => {
+const Import: FC = () => {
   const [text, setText] = useState("")
   const [failedLines, setFailedLines] = useState<string[]>([])
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { entries, setEntries, token } = useProgress()
   const navigate = useNavigate()
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!token) {
       navigate("/")
     }
@@ -84,48 +86,112 @@ const Import: React.FC = () => {
     return { entries: newEntries, failed }
   }
 
+  const navigateToLine = (lineText: string) => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    const index = text.indexOf(lineText)
+    if (index !== -1) {
+      // 1. Set the selection and focus
+      textarea.focus()
+      textarea.setSelectionRange(index, index + lineText.length)
+
+      // 2. Calculate the row number to center "internally"
+      const linesBefore = text.substring(0, index).split("\n")
+      const rowNumber = linesBefore.length - 1
+      const lineHeight = 21 // Approx height for text-sm leading-relaxed
+      
+      // Center the line within the textarea box
+      textarea.scrollTop = (rowNumber * lineHeight) - (textarea.clientHeight / 2) + (lineHeight / 2)
+
+      // 3. Center the textarea within the "screen"
+      // We calculate where the textarea is and where the viewport center is
+      const rect = textarea.getBoundingClientRect()
+      const scrollTarget = window.pageYOffset + rect.top - (window.innerHeight / 2) + (textarea.clientHeight / 2)
+      
+      window.scrollTo({
+        top: Math.max(0, scrollTarget - 40), // 40px offset to keep it slightly above dead center (balance for Navbar)
+        behavior: "smooth"
+      })
+    }
+  }
+
   const parseText = (content: string) => {
     setFailedLines([])
     let finalEntries: AnimeEntry[] = []
     let finalFailed: string[] = []
 
-    // First try parsing as CSV if it looks like one
+    // 1. Try CSV first
     if (content.includes(",") && content.includes("\n")) {
       const result = parseCSV(content)
       if (result && result.entries.length > 0) {
         finalEntries = result.entries
         finalFailed = result.failed
+        
+        setEntries(finalEntries)
+        setFailedLines(finalFailed)
+        toast.success(`Loaded ${finalEntries.length} entries via CSV.`)
+        return
       }
     }
 
-    if (finalEntries.length === 0) {
-      // Fallback to regex for the "[Name] (Rating/10)" format
-      const regex = /(?:^|\n)\d*\.?\s*\[?([^\](\n]+)\]?\s*\(([\d.]+)\/10\)/g
-      const matches = Array.from(content.matchAll(regex))
+    const lines = content
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0)
 
-      const foundLines = matches.map((m) => m[0].trim())
-      finalEntries = matches.map((match) => ({
-        originalLine: match[0].trim(),
-        name: match[1].trim(),
-        rating: parseFloat(match[2]),
-        selections: [],
-        status: "pending",
-      }))
+    for (const line of lines) {
+      // 1. Check for Structural Markers
+      const hasListMarker = /^[0-9]+[\.\)]\s*|^[\-\*\+]\s*/.test(line)
+      
+      // 2. Initial Cleaning for pattern matching
+      let cleanedLine = line
+        .replace(/^[0-9]+[\.\)]\s*/, "") // Strip "1. " or "1) "
+        .replace(/^[\-\*\+]\s*/, "")    // Strip "- " or "* "
+        .trim()
 
-      // Identify unparsed lines
-      const allLines = content
-        .split("\n")
-        .map((l) => l.trim())
-        .filter((l) => l.length > 0)
-      finalFailed = allLines.filter(
-        (line) => !foundLines.some((found) => line.includes(found))
-      )
+      if (cleanedLine.length === 0) continue
+
+      // 3. Primary Regex: [Title] (Score) -> The "Structure of Truth"
+      const scoreRegex = /(?:^|\d*\.?\s*)\[?(.+?)\]?\s*[\(\-:\s]\s*([\d\.,]+)(?:\/10)?\)?$/
+      const match = cleanedLine.match(scoreRegex)
+
+      if (match) {
+        const name = match[1].trim()
+        const ratingStr = match[2].replace(",", ".")
+        const rating = parseFloat(ratingStr)
+
+        finalEntries.push({
+          originalLine: line,
+          name,
+          rating: isNaN(rating) ? 0 : rating > 10 ? rating / 10 : rating,
+          selections: [],
+          status: "pending",
+        })
+      } else {
+        // 4. Strict Structural-Only Fallback
+        // Only accept as a "Title-Only" entry if it has an explicit list marker
+        // and doesn't look like a URL or a multi-line sentence.
+        const isUrl = /^(https?:\/\/|www\.)/i.test(cleanedLine)
+        const isProse = /[\.\?\!]$/.test(cleanedLine) && cleanedLine.includes(" ")
+
+        if (hasListMarker && cleanedLine.length > 2 && !isUrl && !isProse) {
+          finalEntries.push({
+            originalLine: line,
+            name: cleanedLine,
+            rating: 0,
+            selections: [],
+            status: "pending",
+          })
+        } else {
+          // If it doesn't meet the structural requirements, it's unparsed
+          finalFailed.push(line)
+        }
+      }
     }
 
     if (finalEntries.length === 0 && finalFailed.length === 0) {
-      toast.error(
-        "No valid entries found. Check the format: [Name] (Rating/10) or CSV with headers."
-      )
+      toast.error("No valid entries found.")
       return
     }
 
@@ -133,14 +199,14 @@ const Import: React.FC = () => {
     setFailedLines(finalFailed)
 
     if (finalEntries.length > 0) {
-      toast.success(`Successfully parsed ${finalEntries.length} entries!`)
+      toast.success(`Loaded ${finalEntries.length} entries.`)
     }
     if (finalFailed.length > 0) {
-      toast.warning(`${finalFailed.length} lines could not be parsed.`)
+      toast.warning(`${finalFailed.length} lines moved to unparsed.`)
     }
   }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -158,14 +224,15 @@ const Import: React.FC = () => {
   }
 
   return (
-    <div className="mx-auto max-w-4xl animate-in space-y-8 duration-500 fade-in slide-in-from-bottom-4">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto w-full max-w-4xl animate-in space-y-6 px-4 pb-24 duration-500 fade-in slide-in-from-bottom-4 sm:space-y-8 sm:px-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-3xl font-black tracking-tight uppercase">
+          <h2 className="text-2xl font-black tracking-tight uppercase sm:text-3xl">
             Zenith Import
           </h2>
-          <p className="text-muted-foreground font-medium">
-            Stage your Anime collection for synchronization.
+          <p className="text-xs font-medium text-muted-foreground sm:text-sm">
+            Import your anime lists via text or CSV to prepare for batch
+            synchronization.
           </p>
         </div>
         {entries.length > 0 && (
@@ -173,7 +240,7 @@ const Import: React.FC = () => {
             variant="destructive"
             size="sm"
             onClick={handleClear}
-            className="gap-2"
+            className="w-full gap-2 rounded-none sm:w-auto"
           >
             <Trash2 className="h-4 w-4" />
             Clear All
@@ -181,84 +248,98 @@ const Import: React.FC = () => {
         )}
       </div>
 
-      <div className="grid gap-8 md:grid-cols-3">
+      <div className="grid gap-6 sm:gap-8 md:grid-cols-3">
         <div className="space-y-6 md:col-span-2">
-          <Card className="border-primary/10 shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <Card className="rounded-none border-primary/10 shadow-lg">
+            <CardHeader className="flex flex-col space-y-4 pb-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
               <div className="space-y-1">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <ClipboardList className="h-5 w-5 text-primary" />
                   Paste List
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs sm:text-sm">
                   Format:{" "}
                   <code className="rounded bg-muted px-1">
-                    1. [Anime Name] (9.5/10)
+                    [Name] (Rating/10)
                   </code>
                 </CardDescription>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 gap-2 border-primary/20 bg-primary/5 font-black text-primary transition-all hover:bg-primary hover:text-primary-foreground"
+                className="h-9 w-full gap-2 border-primary/20 bg-primary/5 font-black text-primary transition-all hover:bg-primary hover:text-primary-foreground sm:w-auto"
                 onClick={() => {
-                  const prompt = `Act as a data parser. I will provide a list of anime titles and ratings. Convert them into a numbered list where each line matches the pattern: [Anime Name] (Score/10). \n\nRules:\n1. Exact format: 1. Title (9.5/10)\n2. Normalize scores to a 10-point scale.\n3. Use the English or Romaji title.\n4. Output ONLY the list. No intro or outro. Just the data.`
-                  navigator.clipboard.writeText(prompt)
+                  navigator.clipboard.writeText(AI_PROMPT)
                   toast.success("AI Formatter Prompt copied!")
                 }}
               >
-                <div className="flex h-4 w-4 items-center justify-center rounded bg-primary/20 text-[8px]">
+                <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-primary/20 text-[8px]">
                   AI
                 </div>
-                Copy Formatter Prompt
+                <span className="truncate">Copy Formatter Prompt</span>
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               <Textarea
-                placeholder="1. Cowboy Bebop (10/10)&#10;2. Akira (9/10)..."
-                className="max-h-30 min-h-[300px] font-mono text-sm leading-relaxed focus-visible:ring-primary/30"
+                ref={textareaRef}
+                placeholder="1. Cowboy Bebop (10/10)&#10; Akira (9/10)..."
+                className="min-h-[300px] max-h-[500px] overflow-y-auto rounded-none font-mono text-sm leading-relaxed focus-visible:ring-primary/30"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
               />
               <Button
-                className="h-11 w-full gap-2 font-bold"
+                className="h-11 w-full gap-2 rounded-none font-bold"
                 onClick={() => parseText(text)}
                 disabled={!text.trim()}
               >
                 Parse Text Contents
               </Button>
-
-              {failedLines.length > 0 && (
-                <div className="animate-in space-y-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-6 duration-300 slide-in-from-top-2">
-                  <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-destructive uppercase">
-                    <AlertTriangle className="h-4 w-4" />
-                    Unparsed Lines ({failedLines.length})
-                  </div>
-                  <div className="scrollbar-thin scrollbar-thumb-destructive/20 scrollbar-track-transparent max-h-[200px] space-y-2 overflow-y-auto pr-2">
-                    {failedLines.map((line, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-2 rounded-lg border border-destructive/10 bg-destructive/5 p-2 font-mono text-xs text-destructive/80"
-                      >
-                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-destructive/20 text-[8px] font-bold">
-                          {idx + 1}
-                        </span>
-                        <span className="truncate">{line}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground italic">
-                    Tip: Ensure the line matches "[Name] (Score/10)" or your CSV
-                    headers.
-                  </p>
-                </div>
-              )}
             </CardContent>
           </Card>
+
+          {failedLines.length > 0 && (
+            <Card className="animate-in rounded-none border-destructive/20 bg-destructive/5 shadow-lg duration-500 slide-in-from-top-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm font-black tracking-widest text-destructive uppercase">
+                  <AlertTriangle className="h-4 w-4" />
+                  Unparsed Lines ({failedLines.length})
+                </CardTitle>
+                <CardDescription className="text-xs text-destructive/60">
+                  These lines didn't match our recognized formats.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="scrollbar-thin scrollbar-thumb-destructive/20 scrollbar-track-transparent max-h-[300px] space-y-2 overflow-y-auto pr-2 sm:max-h-[400px]">
+                  {failedLines.map((line, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => navigateToLine(line)}
+                      className="group/item flex min-w-0 cursor-pointer items-start gap-3 rounded-none border border-destructive/10 bg-background/50 p-3 font-mono text-[11px] text-destructive/80 shadow-sm transition-all hover:border-destructive/30 hover:bg-destructive/10 sm:text-xs"
+                    >
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-destructive/20 text-[10px] font-bold transition-colors group-hover/item:bg-destructive/40">
+                        {idx + 1}
+                      </span>
+                      <span className="min-w-0 flex-1 break-all whitespace-pre-wrap">
+                        {line}
+                      </span>
+                      <ArrowRight className="h-3 w-3 shrink-0 self-center opacity-0 transition-opacity group-hover/item:opacity-30" />
+                    </div>
+                  ))}
+                </div>
+                <div className="rounded-none bg-destructive/10 p-4">
+                  <p className="text-xs leading-relaxed font-bold text-destructive/80 italic">
+                    Tip: Ensure each line matches "[Name] (Score/10)" or your
+                    CSV has "Name" and "Score" headers. You can also use the AI
+                    formatter prompt above.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-6">
-          <Card className="border-primary/20 bg-primary/5">
+          <Card className="rounded-none border-primary/20 bg-primary/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg text-primary">
                 <Upload className="h-5 w-5" />
@@ -276,7 +357,7 @@ const Import: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="group relative rounded-xl border-2 border-dashed border-primary/20 p-6 text-center transition-colors hover:border-primary/40">
+              <div className="group relative rounded-none border-2 border-dashed border-primary/20 p-6 text-center transition-colors hover:border-primary/40">
                 <Input
                   type="file"
                   accept=".txt,.csv"
@@ -290,33 +371,41 @@ const Import: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-
-
-          {entries.length > 0 && (
-            <div className="animate-in space-y-4 rounded-2xl border border-primary/20 bg-primary/5 p-6 duration-300 zoom-in-95">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-bold tracking-wider text-primary uppercase">
-                  Summary
-                </h4>
-                <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
-                  {entries.length} Entries
-                </span>
-              </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                Your list is ready for review. We'll search for every anime on
-                AniList and let you confirm the results.
-              </p>
-              <Button
-                className="w-full gap-2 shadow-lg shadow-primary/20"
-                onClick={() => navigate("/review")}
-              >
-                Proceed to Review
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
         </div>
       </div>
+
+      {entries.length > 0 && (
+        <div className="fixed right-4 bottom-6 left-4 z-50 flex animate-in flex-col gap-3 rounded-none border border-primary/20 bg-card/60 p-4 shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-2xl transition-all duration-500 fade-in slide-in-from-bottom-8 sm:right-auto sm:bottom-8 sm:left-1/2 sm:w-full sm:max-w-md sm:-translate-x-1/2">
+          <div className="flex items-center justify-between px-2 sm:px-4">
+            <div className="flex flex-col">
+              <p className="text-[8px] font-black tracking-[0.2em] text-muted-foreground uppercase opacity-60 sm:text-[9px]">
+                Import Collection
+              </p>
+              <p className="text-xs font-black text-primary sm:text-sm">
+                {entries.length} Entries Ready
+              </p>
+            </div>
+            <div className="h-8 w-px bg-primary/10" />
+            <div className="flex flex-col text-right">
+              <p className="text-[8px] font-black tracking-[0.2em] text-muted-foreground uppercase opacity-60 sm:text-[9px]">
+                Source
+              </p>
+              <p className="text-xs font-black text-foreground sm:text-sm">
+                Parsed Content
+              </p>
+            </div>
+          </div>
+          
+          <Button
+            size="lg"
+            onClick={() => navigate("/review")}
+            className="group h-12 w-full rounded-none bg-primary text-[10px] font-black tracking-widest uppercase shadow-2xl shadow-primary/30 transition-all hover:scale-[1.02] active:scale-95 sm:h-12 sm:text-xs"
+          >
+            Review Entries
+            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

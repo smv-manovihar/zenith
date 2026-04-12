@@ -1,6 +1,10 @@
-import React, { useState } from "react"
-import { useProgress } from "@/components/ProgressProvider"
-import { queryAniList, SAVE_MEDIA_LIST_ENTRY } from "@/lib/anilist"
+import { useState, useMemo, type FC } from "react"
+import {
+  useProgress,
+  type AnimeEntry,
+  type Selection,
+} from "@/components/ProgressProvider"
+import { queryAniList, SAVE_MEDIA_LIST_ENTRY, rateLimiter } from "@/lib/anilist"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,6 +16,7 @@ import {
   RefreshCcw,
   ExternalLink,
   Star,
+  Info,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
@@ -21,11 +26,116 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { NumberInput } from "@/components/NumberInput"
+import { List, type RowComponentProps } from "react-window"
 
-const Sync: React.FC = () => {
-  const { entries, updateEntry, token } = useProgress()
+type SyncRowItem =
+  | { type: "header"; entry: AnimeEntry; index: number }
+  | {
+      type: "selection"
+      selection: Selection
+      entryIndex: number
+      selectionIndex: number
+      entry: AnimeEntry
+    }
+
+interface SyncRowProps {
+  items: SyncRowItem[]
+  updateEntry: (index: number, updates: Partial<AnimeEntry>) => void
+}
+
+const SyncRowComponent = ({
+  index,
+  style,
+  items,
+  updateEntry,
+}: RowComponentProps<SyncRowProps>) => {
+  const item = items[index]
+  if (!item) return null
+
+  if (item.type === "header") {
+    return (
+      <div style={style} className="px-1 sm:px-2">
+        <div className="flex h-[40px] items-center justify-between border-b bg-muted/30 px-2 sm:px-3">
+          <span className="truncate text-[10px] font-black tracking-widest text-muted-foreground uppercase sm:text-xs">
+            {item.entry.name}
+          </span>
+          <Badge
+            variant="outline"
+            className="shrink-0 text-[8px] sm:text-[10px]"
+          >
+            {item.entry.selections.length} Items
+          </Badge>
+        </div>
+      </div>
+    )
+  }
+
+  const { selection, entryIndex, selectionIndex, entry } = item
+  return (
+    <div style={style} className="px-1 sm:px-2">
+      <div className="flex h-[72px] items-center justify-between border-b bg-card/50 p-2 pl-4 last:border-0 sm:p-3 sm:pl-6">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+          <div className="h-10 w-8 shrink-0 overflow-hidden rounded-none bg-muted sm:h-12 sm:w-10">
+            {selection.image && (
+              <img
+                src={selection.image}
+                className="h-full w-full object-cover"
+              />
+            )}
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-xs font-bold sm:text-sm">
+              {selection.title}
+            </span>
+            <div className="mt-1 flex w-fit items-center gap-1.5 bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary sm:px-2 sm:text-[10px]">
+              <Star className="h-2.5 w-2.5 fill-primary text-primary sm:h-3 sm:w-3" />
+              <span className="xs:inline hidden uppercase">Score</span>
+              <NumberInput
+                value={selection.rating}
+                onChange={(val: number) => {
+                  const newSelections = entry.selections.map((s, i) =>
+                    i === selectionIndex ? { ...s, rating: val } : s
+                  )
+                  updateEntry(entryIndex, { selections: newSelections })
+                }}
+              />
+              <span className="opacity-40">/10</span>
+            </div>
+          </div>
+        </div>
+        <div className="ml-2 shrink-0">
+          {selection.status === "completed" && (
+            <CheckCircle2 className="h-4 w-4 text-emerald-500 sm:h-5 sm:w-5" />
+          )}
+          {selection.status === "syncing" && (
+            <Loader2 className="h-4 w-4 animate-spin text-primary sm:h-5 sm:w-5" />
+          )}
+          {selection.status === "error" && (
+            <Tooltip>
+              <TooltipTrigger>
+                <AlertCircle className="h-4 w-4 text-destructive sm:h-5 sm:w-5" />
+              </TooltipTrigger>
+              <TooltipContent>{selection.error}</TooltipContent>
+            </Tooltip>
+          )}
+          {selection.status === "pending" && (
+            <div className="h-4 w-4 rounded-full border-2 border-primary/20 sm:h-5 sm:w-5" />
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const Sync: FC = () => {
+  const { entries, updateEntry, updateSelection, token } = useProgress()
   const [isSyncing, setIsSyncing] = useState(false)
+  const [remainingRequests, setRemainingRequests] = useState<number | null>(
+    null
+  )
   const navigate = useNavigate()
+
   const totalToSync = entries.reduce((acc, e) => acc + e.selections.length, 0)
   const totalCompleted = entries.reduce(
     (acc, e) =>
@@ -35,39 +145,45 @@ const Sync: React.FC = () => {
   const syncProgress =
     totalToSync > 0 ? Math.round((totalCompleted / totalToSync) * 100) : 0
 
-  const resolvedEntries = entries.filter((e) => e.selections.length > 0)
-
   const handleSync = async () => {
-    if (!token) {
-      toast.error("You must be logged in to sync.")
+    if (!token || isSyncing) {
+      if (!token) toast.error("You must be logged in to sync.")
       return
     }
 
     setIsSyncing(true)
 
-    for (let i = 0; i < entries.length; i++) {
-      const entry = entries[i]
-      if (
-        entry.selections.length === 0 ||
-        entry.selections.every((s) => s.status === "completed")
-      )
-        continue
+    const tasks: {
+      entryIndex: number
+      selectionIndex: number
+      selection: any
+    }[] = []
+    entries.forEach((entry, entryIndex) => {
+      entry.selections.forEach((selection, selectionIndex) => {
+        if (selection.status !== "completed") {
+          tasks.push({ entryIndex, selectionIndex, selection })
+        }
+      })
+    })
 
-      const updatedSelections = [...entry.selections]
-      let allSelectionsCompleted = true
+    if (tasks.length === 0) {
+      setIsSyncing(false)
+      toast.info("No items left to sync.")
+      return
+    }
 
-      for (let j = 0; j < updatedSelections.length; j++) {
-        const selection = updatedSelections[j]
-        if (selection.status === "completed") continue
+    const runWorker = async () => {
+      while (tasks.length > 0) {
+        const task = tasks.shift()
+        if (!task) break
 
-        updatedSelections[j] = { ...selection, status: "syncing" }
-        updateEntry(i, {
-          selections: [...updatedSelections],
-          status: "syncing",
-        })
+        const { entryIndex, selectionIndex, selection } = task
+
+        updateSelection(entryIndex, selectionIndex, { status: "syncing" })
+        updateEntry(entryIndex, { status: "syncing" })
 
         try {
-          await queryAniList(
+          const result = await queryAniList(
             SAVE_MEDIA_LIST_ENTRY,
             {
               mediaId: selection.id,
@@ -77,33 +193,78 @@ const Sync: React.FC = () => {
             token
           )
 
-          updatedSelections[j] = { ...selection, status: "completed" }
+          updateSelection(entryIndex, selectionIndex, { status: "completed" })
+
+          if (result.headers["x-ratelimit-remaining"]) {
+            setRemainingRequests(
+              parseInt(result.headers["x-ratelimit-remaining"])
+            )
+          }
         } catch (err: any) {
           console.error(err)
-          updatedSelections[j] = {
-            ...selection,
+          updateSelection(entryIndex, selectionIndex, {
             status: "error",
             error: err.message || "Failed to update",
-          }
-          allSelectionsCompleted = false
+          })
           toast.error(`Failed to update ${selection.title}`)
         }
 
-        // Rate limiting precaution
-        updateEntry(i, { selections: [...updatedSelections] })
-        await new Promise((r) => setTimeout(r, 750))
-      }
+        const remaining = rateLimiter.remaining
+        let stagger = 200
 
-      const finalStatus = allSelectionsCompleted ? "completed" : "error"
-      updateEntry(i, {
-        status: finalStatus,
-        selections: updatedSelections,
-      })
+        if (remaining <= 15) stagger = 2000
+        if (remaining <= 5) stagger = rateLimiter.waitTime || 5000
+
+        await new Promise((r) => setTimeout(r, stagger))
+      }
     }
+
+    const workerCount = Math.min(5, tasks.length)
+    const workers = Array(workerCount)
+      .fill(null)
+      .map(() => runWorker())
+
+    await Promise.all(workers)
+
+    entries.forEach((entry, idx) => {
+      const allDone = entry.selections.every((s) => s.status === "completed")
+      if (allDone && entry.status !== "completed") {
+        updateEntry(idx, { status: "completed" })
+      }
+    })
 
     setIsSyncing(false)
     toast.success("Sync process finished!")
   }
+
+  const flattenedItems = useMemo(() => {
+    const items: SyncRowItem[] = []
+    entries.forEach((entry, eIdx) => {
+      items.push({ type: "header", entry, index: eIdx })
+      entry.selections.forEach((selection, sIdx) => {
+        items.push({
+          type: "selection",
+          selection,
+          entryIndex: eIdx,
+          selectionIndex: sIdx,
+          entry,
+        })
+      })
+    })
+    return items
+  }, [entries])
+
+  const rowHeight = (index: number) => {
+    return flattenedItems[index].type === "header" ? 40 : 72
+  }
+
+  const rowProps = useMemo(
+    () => ({
+      items: flattenedItems,
+      updateEntry,
+    }),
+    [flattenedItems, updateEntry]
+  )
 
   const selectionsCount = entries.reduce(
     (acc, e) => acc + e.selections.length,
@@ -114,137 +275,64 @@ const Sync: React.FC = () => {
       acc + e.selections.filter((s) => s.status === "completed").length,
     0
   )
-  const errorCount = entries.filter((e) => e.status === "error").length
+  const hasMissingScores = entries.some(
+    (e) => e.selections.length > 0 && e.rating === 0
+  )
+  const errorCount = entries.reduce(
+    (acc, e) => acc + e.selections.filter((s) => s.status === "error").length,
+    0
+  )
 
   return (
-    <div className="mx-auto max-w-4xl animate-in space-y-8 duration-500 zoom-in-95 fade-in">
+    <div className="mx-auto w-full max-w-4xl animate-in space-y-8 px-2 pb-24 duration-500 zoom-in-95 fade-in sm:px-4">
       <div className="mx-auto max-w-lg space-y-4 text-center">
-        <h2 className="text-3xl font-black tracking-tight uppercase">
+        <h2 className="text-2xl font-black tracking-tight uppercase sm:text-3xl">
           Commit to AniList
         </h2>
-        <p className="font-medium text-muted-foreground">
-          Matches established for {resolvedEntries.length} out of{" "}
-          {entries.length} items. Ready to commit these changes to your AniList
-          profile?
+        <p className="text-xs font-medium text-muted-foreground sm:text-sm">
+          Push your reviewed selections and ratings directly to your AniList
+          account.
         </p>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-3">
-        <Card className="border-primary/10 shadow-xl md:col-span-2">
-          <CardHeader>
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card className="order-2 rounded-none border-primary/10 shadow-xl md:order-1 md:col-span-2">
+          <CardHeader className="p-3 pb-0! sm:p-5">
             <CardTitle className="flex items-center justify-between">
-              <span>Sync Progress</span>
-              <Badge variant="secondary" className="font-mono">
+              <span className="text-sm sm:text-base">Sync Progress</span>
+              <Badge
+                variant="secondary"
+                className="font-mono text-[9px] sm:text-[10px]"
+              >
                 {syncProgress}%
               </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <Progress value={syncProgress} className="h-4" />
+          <CardContent className="space-y-4 p-3 sm:p-5">
+            <Progress value={syncProgress} className="h-3" />
 
-            <div className="space-y-3">
-              <h4 className="text-sm font-bold tracking-wider text-muted-foreground uppercase">
+            <div className="space-y-2">
+              <h4 className="text-[9px] font-bold tracking-wider text-muted-foreground uppercase sm:text-[10px]">
                 Status List
               </h4>
-              <div className="max-h-[400px] divide-y overflow-hidden overflow-y-auto rounded-xl border bg-muted/20">
-                {entries.map((entry, idx) => (
-                  <div
-                    key={idx}
-                    className="flex flex-col divide-y border-b bg-card/50 last:border-0"
-                  >
-                    {/* Header: Entry name */}
-                    <div className="flex items-center justify-between bg-muted/30 p-3">
-                      <span className="text-xs font-black tracking-widest text-muted-foreground uppercase">
-                        {entry.name}
-                      </span>
-                      <Badge variant="outline" className="text-[10px]">
-                        {entry.selections.length} Items
-                      </Badge>
-                    </div>
-
-                    {/* Selection list */}
-                    <div className="divide-y divide-primary/5">
-                      {entry.selections.map((selection, sIdx) => (
-                        <div
-                          key={sIdx}
-                          className="flex items-center justify-between p-3 pl-6"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-8 overflow-hidden rounded-md bg-muted">
-                              {selection.image && (
-                                <img
-                                  src={selection.image}
-                                  className="h-full w-full object-cover"
-                                />
-                              )}
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="max-w-[180px] truncate text-sm font-bold">
-                                {selection.title}
-                              </span>
-                              <div className="mt-1 flex w-fit items-center gap-1.5 rounded-lg bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                                <Star className="h-3 w-3 fill-primary text-primary" />
-                                <span>SCORE</span>
-                                <input
-                                  type="number"
-                                  step="0.5"
-                                  min="0"
-                                  max="10"
-                                  value={selection.rating}
-                                  onChange={(e) => {
-                                    const val = parseFloat(e.target.value) || 0
-                                    const newSelections = entry.selections.map(
-                                      (s, i) =>
-                                        i === sIdx ? { ...s, rating: val } : s
-                                    )
-                                    updateEntry(idx, {
-                                      selections: newSelections,
-                                    })
-                                  }}
-                                  className="w-8 border-none bg-transparent p-0 text-right font-black focus:ring-0"
-                                />
-                                <span className="opacity-40">/10</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div>
-                            {selection.status === "completed" && (
-                              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                            )}
-                            {selection.status === "syncing" && (
-                              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                            )}
-                            {selection.status === "error" && (
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <AlertCircle className="h-5 w-5 text-destructive" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  {selection.error}
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                            {selection.status === "pending" && (
-                              <div className="h-5 w-5 rounded-full border-2 border-primary/20" />
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+              <div className="h-[400px] overflow-hidden rounded-none border bg-muted/20">
+                <List
+                  style={{ height: 400, width: "100%" }}
+                  rowCount={flattenedItems.length}
+                  rowHeight={rowHeight}
+                  rowProps={rowProps}
+                  rowComponent={SyncRowComponent}
+                  className="scrollbar-thin scrollbar-thumb-primary/20"
+                />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <div className="space-y-6">
-          <Card className="border-primary/20 bg-primary/5">
-            <CardHeader>
-              <CardTitle className="text-lg">Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between text-sm">
+        <div className="order-1 space-y-6 md:order-2">
+          <Card className="rounded-none border-primary/20 bg-primary/5">
+            <CardContent className="space-y-4 p-4 sm:p-5">
+              <div className="flex justify-between text-[11px] sm:text-xs">
                 <span className="text-muted-foreground">
                   Successfully updated
                 </span>
@@ -252,37 +340,67 @@ const Sync: React.FC = () => {
                   {selectionsCompleted}
                 </span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-[11px] sm:text-xs">
                 <span className="text-muted-foreground">Errors</span>
                 <span className="font-bold text-destructive">{errorCount}</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-[11px] sm:text-xs">
                 <span className="text-muted-foreground">Remaining</span>
                 <span className="font-bold">
                   {selectionsCount - selectionsCompleted}
                 </span>
               </div>
 
+              {remainingRequests !== null && (
+                <div className="flex justify-between border-t border-primary/10 pt-4 text-[11px] sm:text-xs">
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <Info className="h-3 w-3" />
+                    API Budget
+                  </span>
+                  <Badge
+                    variant={
+                      remainingRequests < 10 ? "destructive" : "secondary"
+                    }
+                    className="font-mono text-[9px] font-bold sm:text-[10px]"
+                  >
+                    {remainingRequests} / 30
+                  </Badge>
+                </div>
+              )}
+
+              {hasMissingScores && (
+                <div className="flex animate-in items-center gap-2 rounded-none bg-destructive/10 p-3 text-destructive slide-in-from-top-2">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <p className="text-[9px] leading-tight font-bold uppercase">
+                    Missing scores detected. Please return to review.
+                  </p>
+                </div>
+              )}
+
               <Button
-                className="group h-12 w-full gap-2 text-lg font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02]"
+                className="group h-11 w-full gap-2 rounded-none text-sm font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] sm:text-base"
                 onClick={handleSync}
-                disabled={isSyncing || selectionsCompleted === selectionsCount}
+                disabled={
+                  isSyncing ||
+                  selectionsCompleted === selectionsCount ||
+                  hasMissingScores
+                }
               >
                 {isSyncing ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Play className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
+                  <Play className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 )}
                 {isSyncing ? "Syncing..." : "Sync to AniList"}
               </Button>
 
               <Button
                 variant="outline"
-                className="w-full gap-2"
+                className="h-10 w-full gap-2 text-xs sm:text-sm"
                 onClick={() => navigate("/review")}
                 disabled={isSyncing}
               >
-                <RefreshCcw className="h-4 w-4" />
+                <RefreshCcw className="h-3.5 w-3.5" />
                 Back to Review
               </Button>
             </CardContent>
@@ -290,7 +408,7 @@ const Sync: React.FC = () => {
 
           <Button
             variant="ghost"
-            className="w-full gap-2 text-muted-foreground"
+            className="w-full gap-2 text-xs text-muted-foreground"
             asChild
           >
             <a
