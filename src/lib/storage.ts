@@ -52,6 +52,12 @@ export const Storage = {
     localStorage.removeItem(STORAGE_KEYS.USER)
   },
 
+  clearAll: () => {
+    Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key))
+    // Also clear old keys to be thorough
+    Object.values(OLD_STORAGE_KEYS).forEach((key) => localStorage.removeItem(key))
+  },
+
   getUser: () => getMigratedItem(STORAGE_KEYS.USER, OLD_STORAGE_KEYS.USER),
   setUser: (user: any) => localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user)),
 

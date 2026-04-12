@@ -36,7 +36,9 @@ export const ReviewHeader: FC<ReviewHeaderProps> = ({
                 : "bg-destructive/10 text-destructive hover:bg-destructive/20"
             }`}
           >
-            <AlertCircle className={`h-3 w-3 ${isFilterActive ? "animate-pulse" : ""}`} />
+            <AlertCircle
+              className={`h-3 w-3 ${isFilterActive ? "animate-pulse" : ""}`}
+            />
             <span className="text-[10px] font-black tracking-widest uppercase">
               {entriesWithMissingScores} Scores Missing
             </span>
@@ -46,7 +48,7 @@ export const ReviewHeader: FC<ReviewHeaderProps> = ({
           <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase sm:text-xs">
             Progress
           </span>
-          <div className="h-1.5 flex-1 min-w-[60px] overflow-hidden rounded-none bg-muted sm:w-32 md:w-48 sm:flex-initial">
+          <div className="h-1.5 min-w-[60px] flex-1 overflow-hidden rounded-none bg-muted sm:w-32 sm:flex-initial md:w-48">
             <div
               className="h-full bg-primary transition-all duration-700"
               style={{

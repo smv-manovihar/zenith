@@ -200,7 +200,11 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
         updateEntry(currentIndex, {
           selections: perfectMatches.map((match: any) => ({
             id: match.id,
-            title: match.title.english || match.title.romaji || match.title.native || "No Title",
+            title:
+              match.title.english ||
+              match.title.romaji ||
+              match.title.native ||
+              "No Title",
             image: match.coverImage?.large || "",
             rating: currentEntry.rating,
             status: "pending",
@@ -233,7 +237,11 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
       } else {
         newSelections.push({
           id: media.id,
-          title: media.title.english || media.title.romaji || media.title.native || "No Title",
+          title:
+            media.title.english ||
+            media.title.romaji ||
+            media.title.native ||
+            "No Title",
           image: media.coverImage?.large || "",
           rating: currentEntry.rating,
           status: "pending",
@@ -280,7 +288,11 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
       updateEntry(currentIndex, {
         selections: perfectMatches.map((match: any) => ({
           id: match.id,
-          title: match.title.english || match.title.romaji || match.title.native || "No Title",
+          title:
+            match.title.english ||
+            match.title.romaji ||
+            match.title.native ||
+            "No Title",
           image: match.coverImage?.large || "",
           rating: currentEntry.rating,
           status: "pending",
@@ -299,7 +311,11 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
 
     const newSelections = searchResults.map((media: any) => ({
       id: media.id,
-      title: media.title.english || media.title.romaji || media.title.native || "No Title",
+      title:
+        media.title.english ||
+        media.title.romaji ||
+        media.title.native ||
+        "No Title",
       image: media.coverImage?.large || "",
       rating: currentEntry.rating,
       status: "pending",

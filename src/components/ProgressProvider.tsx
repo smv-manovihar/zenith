@@ -123,7 +123,9 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   })
 
-  const [token, setTokenState] = useState<string | null>(() => Storage.getToken())
+  const [token, setTokenState] = useState<string | null>(() =>
+    Storage.getToken()
+  )
   const [user, setUser] = useState<UserData | null>(() => {
     const saved = Storage.getUser()
     return saved ? JSON.parse(saved) : null
@@ -186,8 +188,10 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (token) Storage.setToken(token)
     else {
-      Storage.removeToken()
+      Storage.clearAll()
       setUser(null)
+      setEntriesState([])
+      setLastVisitedIndexState(0)
     }
   }, [token])
 
