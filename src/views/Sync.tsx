@@ -381,7 +381,7 @@ const Sync: FC = () => {
   )
 
   return (
-    <div className="mx-auto w-full max-w-4xl animate-in space-y-8 px-2 pb-24 duration-500 zoom-in-95 fade-in sm:px-4">
+    <div className="mx-auto w-full max-w-4xl animate-in space-y-8 px-1 pb-24 duration-500 zoom-in-95 fade-in sm:px-4">
       <div className="mx-auto max-w-lg space-y-4 text-center">
         <h2 className="text-2xl font-black tracking-tight uppercase sm:text-3xl">
           Commit to AniList
@@ -484,11 +484,21 @@ const Sync: FC = () => {
               )}
 
               {hasMissingScores && (
-                <div className="flex animate-in items-center gap-2 rounded-none bg-destructive/10 p-3 text-destructive slide-in-from-top-2">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  <p className="text-[9px] leading-tight font-bold uppercase">
-                    Missing scores detected. Please return to review.
-                  </p>
+                <div className="flex animate-in flex-col gap-3 rounded-none bg-destructive/10 p-4 text-destructive slide-in-from-top-2">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <p className="text-[10px] font-black leading-tight uppercase tracking-widest">
+                      Missing scores detected
+                    </p>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="h-8 w-full rounded-none text-[10px] font-black uppercase tracking-tighter shadow-lg shadow-destructive/20"
+                    onClick={() => navigate("/review?filter=missing")}
+                  >
+                    Review & Fix Missing Scores
+                  </Button>
                 </div>
               )}
 

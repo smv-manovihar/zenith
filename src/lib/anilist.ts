@@ -107,9 +107,9 @@ export const queryAniList = async (
 }
 
 export const SEARCH_ANIME_QUERY = `
-  query ($search: String) {
+  query ($search: String, $formatList: [MediaFormat]) {
     Page(page: 1, perPage: 10) {
-      media(search: $search, type: ANIME) {
+      media(search: $search, type: ANIME, format_in: $formatList) {
         id
         title {
           romaji
@@ -125,6 +125,7 @@ export const SEARCH_ANIME_QUERY = `
         status
         episodes
         averageScore
+        siteUrl
         relations {
           edges {
             relationType
@@ -132,10 +133,17 @@ export const SEARCH_ANIME_QUERY = `
               id
               title {
                 romaji
+                english
+                native
               }
               coverImage {
                 large
               }
+              siteUrl
+              description
+              status
+              episodes
+              averageScore
               format
               type
             }

@@ -1,6 +1,13 @@
-import { useState, useEffect, useCallback, useRef, type FC } from "react"
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  type FC,
+  useMemo,
+} from "react"
 import { AlertCircle } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { useProgress } from "@/components/ProgressProvider"
 import { Button } from "@/components/ui/button"
 
@@ -20,6 +27,13 @@ const Review: FC = () => {
       : 0
   })
   const [selectedDetailsMedia, setSelectedDetailsMedia] = useState<any>(null)
+
+  const [searchParams] = useSearchParams()
+  const [showMissingOnly, setShowMissingOnly] = useState(
+    searchParams.get("filter") === "missing"
+  )
+  const [sidebarSearchQuery, setSidebarSearchQuery] = useState("")
+
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -67,6 +81,21 @@ const Review: FC = () => {
     (e) => e.selections.length > 0 && e.selections.some((s) => s.rating === 0)
   ).length
 
+  const filteredEntries = useMemo(() => {
+    return entries
+      .map((entry, index) => ({ entry, index }))
+      .filter(({ entry }) => {
+        const matchesMissing =
+          !showMissingOnly ||
+          (entry.selections.length > 0 &&
+            entry.selections.some((s: any) => s.rating === 0))
+        const matchesSearch =
+          !sidebarSearchQuery ||
+          entry.name.toLowerCase().includes(sidebarSearchQuery.toLowerCase())
+        return matchesMissing && matchesSearch
+      })
+  }, [entries, showMissingOnly, sidebarSearchQuery])
+
   const resolvedCount = entries.filter((e) => e.selections.length > 0).length
 
   if (entries.length === 0) {
@@ -82,21 +111,29 @@ const Review: FC = () => {
   }
 
   return (
-    <div className="mx-auto max-w-7xl animate-in space-y-10 px-2 pb-32 duration-700 fade-in sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl animate-in space-y-10 px-1 pb-32 duration-700 fade-in sm:px-6 lg:px-8">
       <ReviewHeader
         entriesCount={entries.length}
         resolvedCount={resolvedCount}
         entriesWithMissingScores={entriesWithMissingScores}
+        isFilterActive={showMissingOnly}
+        onToggleMissingFilter={() => setShowMissingOnly(!showMissingOnly)}
       />
 
       <div className="grid items-start gap-10 lg:grid-cols-12">
         {/* Left Side: Navigation List (Desktop) */}
         <div className="hidden space-y-4 lg:col-span-4 lg:block">
           <ReviewSidebar
-            entries={entries}
+            entries={filteredEntries.map((fe) => ({
+              ...fe.entry,
+              originalIndex: fe.index,
+            }))}
             currentIndex={currentIndex}
             onSelectEntry={setCurrentIndex}
             onUpdateRating={updateRating}
+            searchQuery={sidebarSearchQuery}
+            onSearchChange={setSidebarSearchQuery}
+            isFilterActive={showMissingOnly}
           />
         </div>
 

@@ -24,6 +24,17 @@ export const normalizeTitle = (title: string | null | undefined) => {
 }
 
 export const getScoreStyles = (score: number) => {
+  if (score >= 90)
+    return {
+      color: "text-yellow-400",
+      border: "border-yellow-400/20",
+      bg: "bg-yellow-400/5",
+      icon: React.createElement(Star, {
+        className:
+          "h-3 w-3 fill-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.5)]",
+      }),
+      label: "MASTERPIECE",
+    }
   if (score >= 80)
     return {
       color: "text-emerald-500",
@@ -32,20 +43,28 @@ export const getScoreStyles = (score: number) => {
       icon: React.createElement(Star, { className: "h-3 w-3 fill-emerald-500" }),
       label: "EXCELLENT",
     }
-  if (score >= 65)
+  if (score >= 70)
     return {
-      color: "text-amber-500",
-      border: "border-amber-500/20",
-      bg: "bg-amber-500/10",
-      icon: React.createElement(Star, { className: "h-3 w-3 fill-amber-500" }),
-      label: "POSITIVE",
+      color: "text-blue-500",
+      border: "border-blue-500/20",
+      bg: "bg-blue-500/10",
+      icon: React.createElement(Star, { className: "h-3 w-3 fill-blue-500" }),
+      label: "GOOD",
+    }
+  if (score >= 50)
+    return {
+      color: "text-zinc-500",
+      border: "border-zinc-500/20",
+      bg: "bg-zinc-500/10",
+      icon: React.createElement(Star, { className: "h-3 w-3 fill-zinc-500" }),
+      label: "MEDIOCRE",
     }
   return {
-    color: "text-muted-foreground",
-    border: "border-muted",
-    bg: "bg-muted/30",
-    icon: React.createElement(Star, { className: "h-3 w-3 fill-muted-foreground" }),
-    label: "AVERAGE",
+    color: "text-destructive",
+    border: "border-destructive/20",
+    bg: "bg-destructive/10",
+    icon: React.createElement(Star, { className: "h-3 w-3 fill-destructive" }),
+    label: "POOR",
   }
 }
 
@@ -63,4 +82,45 @@ export const sanitizeHtml = (html: string | null | undefined) => {
     })
     .replace(/on\w+="[^"]*"/gim, "") // Remove inline event handlers (onerror, onclick, etc)
     .replace(/javascript:[^"']*/gim, "") // Remove javascript: pseudo-protocol
+}
+
+export const getStatusStyles = (status: string) => {
+  switch (status) {
+    case "FINISHED":
+      return {
+        bg: "bg-emerald-500/10",
+        text: "text-emerald-500",
+        border: "border-emerald-500/20",
+      }
+    case "RELEASING":
+      return {
+        bg: "bg-blue-500/10",
+        text: "text-blue-500",
+        border: "border-blue-500/20",
+      }
+    case "NOT_YET_RELEASED":
+      return {
+        bg: "bg-amber-500/10",
+        text: "text-amber-500",
+        border: "border-amber-500/20",
+      }
+    case "CANCELLED":
+      return {
+        bg: "bg-destructive/10",
+        text: "text-destructive",
+        border: "border-destructive/20",
+      }
+    case "HIATUS":
+      return {
+        bg: "bg-muted/10",
+        text: "text-muted-foreground",
+        border: "border-muted",
+      }
+    default:
+      return {
+        bg: "bg-primary/10",
+        text: "text-primary",
+        border: "border-primary/20",
+      }
+  }
 }

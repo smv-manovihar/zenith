@@ -1,4 +1,10 @@
-import { type FC, type MouseEvent, type ChangeEvent } from "react"
+import {
+  type FC,
+  type MouseEvent,
+  type ChangeEvent,
+  useState,
+  useEffect,
+} from "react"
 import { Minus, Plus } from "lucide-react"
 import { Button } from "./ui/button"
 
@@ -19,21 +25,54 @@ export const NumberInput: FC<NumberInputProps> = ({
   step = 0.5,
   className = "",
 }) => {
+  const [localValue, setLocalValue] = useState(value.toString())
+
+  useEffect(() => {
+    // Sync local value when the prop value changes externally
+    if (parseFloat(localValue) !== value) {
+      setLocalValue(value.toString())
+    }
+  }, [value, localValue])
+
   const handleDecrement = (e: MouseEvent) => {
     e.stopPropagation()
     const newValue = Math.max(min, value - step)
     onChange(newValue)
+    setLocalValue(newValue.toString())
   }
 
   const handleIncrement = (e: MouseEvent) => {
     e.stopPropagation()
     const newValue = Math.min(max, value + step)
     onChange(newValue)
+    setLocalValue(newValue.toString())
   }
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value) || 0
-    onChange(val)
+    const val = e.target.value
+    setLocalValue(val)
+
+    const parsed = parseFloat(val)
+    if (!isNaN(parsed)) {
+      const clamped = Math.min(Math.max(min, parsed), max)
+      onChange(clamped)
+      // If we clamped (e.g. user typed 11 when max is 10), 
+      // update localValue to reflect the clamped value
+      if (clamped !== parsed) {
+        setLocalValue(clamped.toString())
+      }
+    } else if (val === "") {
+      onChange(min)
+    }
+  }
+
+  const handleBlur = () => {
+    // Clean up the input on blur (e.g., if it was "1." it becomes "1")
+    setLocalValue(value.toString())
+  }
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.select()
   }
 
   return (
@@ -53,8 +92,10 @@ export const NumberInput: FC<NumberInputProps> = ({
         step={step}
         min={min}
         max={max}
-        value={value}
+        value={localValue}
         onChange={handleChange}
+        onBlur={handleBlur}
+        onFocus={handleFocus}
         onClick={(e) => e.stopPropagation()}
         className="w-10 [appearance:textfield] border-none bg-transparent p-0 text-center text-sm font-black focus:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />

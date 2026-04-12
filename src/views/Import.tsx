@@ -231,7 +231,7 @@ const Import: FC = () => {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl animate-in space-y-6 px-4 pb-24 duration-500 fade-in slide-in-from-bottom-4 sm:space-y-8 sm:px-6">
+    <div className="mx-auto w-full max-w-4xl animate-in space-y-6 px-1 pb-24 duration-500 fade-in slide-in-from-bottom-4 sm:space-y-8 sm:px-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-black tracking-tight uppercase sm:text-3xl">

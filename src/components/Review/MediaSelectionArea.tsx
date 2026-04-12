@@ -8,23 +8,32 @@ import {
   AlertCircle,
   Sparkles,
   CheckSquare,
-  RefreshCcw,
+  RotateCcw,
+  Tv,
+  Clapperboard,
 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { NumberInput } from "@/components/NumberInput"
 import { queryAniList, SEARCH_ANIME_QUERY } from "@/lib/anilist"
-import { MediaCard } from "./MediaCard"
-import { normalizeTitle } from "@/lib/utils"
+import { normalizeTitle, cn } from "@/lib/utils"
 import { ReviewSidebar } from "./ReviewSidebar"
 import { MediaCardSkeleton } from "./MediaCardSkeleton"
+import { MediaCard } from "./MediaCard"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useDebounce } from "@/hooks/useDebounce"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Filter } from "lucide-react"
 
 interface MediaSelectionAreaProps {
   currentEntry: any
@@ -33,6 +42,49 @@ interface MediaSelectionAreaProps {
   onViewDetails: (media: any) => void
   entries: any[]
   onSelectEntry: (index: number) => void
+}
+
+const FORMATS = [
+  { value: "TV", label: "TV Series", icon: Tv },
+  { value: "MOVIE", label: "Movie", icon: Clapperboard },
+  { value: "OVA", label: "OVA", icon: Layers },
+  { value: "ONA", label: "ONA", icon: Sparkles },
+  { value: "SPECIAL", label: "Special", icon: Star },
+]
+
+interface FilterButtonProps {
+  format: (typeof FORMATS)[0]
+  isActive: boolean
+  onClick: () => void
+  className?: string
+}
+
+const FilterButton: FC<FilterButtonProps> = ({
+  format,
+  isActive,
+  onClick,
+  className,
+}) => {
+  const Icon = format.icon
+  return (
+    <Button
+      variant={isActive ? "default" : "outline"}
+      size="sm"
+      onClick={onClick}
+      className={cn(
+        "h-10 gap-2 rounded-none border-primary/20 font-black tracking-tight uppercase transition-all duration-300",
+        isActive
+          ? "bg-primary text-primary-foreground shadow-[0_0_20px_rgba(var(--primary),0.3)]"
+          : "bg-background hover:border-primary/40 hover:bg-primary/5",
+        className
+      )}
+    >
+      <Icon
+        className={cn("h-3.5 w-3.5", isActive ? "opacity-100" : "opacity-50")}
+      />
+      {format.label}
+    </Button>
+  )
 }
 
 export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
@@ -44,6 +96,45 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
   onSelectEntry,
 }) => {
   const [searchQuery, setSearchQuery] = useState("")
+  const [selectedFormats, setSelectedFormats] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("anilist_updator_preferred_formats")
+      return saved ? JSON.parse(saved) : FORMATS.map((f) => f.value)
+    }
+    return []
+  })
+
+  const toggleFormat = useCallback((formatValue: string) => {
+    setSelectedFormats((prev) => {
+      // If we are currently in "All Formats" mode (empty array),
+      // clicking a format should select ONLY that format.
+      if (prev.length === 0) {
+        return [formatValue]
+      }
+
+      const next = prev.includes(formatValue)
+        ? prev.filter((f) => f !== formatValue)
+        : [...prev, formatValue]
+
+      // If we manually selected every single format OR deselected everything,
+      // reset to the "All Formats" state (empty array).
+      if (
+        next.length === 0 ||
+        next.length === FORMATS.map((f) => f.value).length
+      ) {
+        return []
+      }
+      return next
+    })
+  }, [])
+
+  // Persist format preferences
+  useEffect(() => {
+    localStorage.setItem(
+      "anilist_updator_preferred_formats",
+      JSON.stringify(selectedFormats)
+    )
+  }, [selectedFormats])
   const [isEditingSearch, setIsEditingSearch] = useState(false)
   const [expandedMediaIds, setExpandedMediaIds] = useState<Set<number>>(
     new Set()
@@ -53,16 +144,22 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
   useEffect(() => {
     if (currentEntry) {
       setSearchQuery(currentEntry.name)
-      setIsEditingSearch(false)
     }
   }, [currentIndex, currentEntry?.name])
 
   const { data, isLoading } = useQuery({
-    queryKey: ["animeSearch", debouncedSearchQuery],
+    queryKey: ["animeSearch", debouncedSearchQuery, selectedFormats],
     queryFn: ({ signal }) =>
       queryAniList(
         SEARCH_ANIME_QUERY,
-        { search: debouncedSearchQuery },
+        {
+          search: debouncedSearchQuery,
+          formatList:
+            selectedFormats.length > 0 &&
+            selectedFormats.length < FORMATS.length
+              ? selectedFormats
+              : undefined,
+        },
         undefined,
         3,
         signal
@@ -355,15 +452,6 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
                 />
               ) : (
                 <div className="group flex min-w-0 flex-1 items-center gap-2">
-                  {/*
-                    Typography fix:
-                    - Base: text-lg  (18px) — readable on phones
-                    - sm:   text-2xl (24px) — tablets
-                    - lg:   text-3xl (30px) — desktops
-                    Previously jumped straight text-xl → sm:text-3xl, skipping tablets.
-                    Also switched from `truncate` to `break-words` so long titles
-                    wrap instead of silently vanishing off-screen on narrow viewports.
-                  */}
                   <h3 className="text-lg font-black tracking-tighter wrap-break-word uppercase underline decoration-primary/30 underline-offset-8 sm:text-2xl lg:text-3xl">
                     {currentEntry.name}
                   </h3>
@@ -390,7 +478,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
               - Now text-xs (12px) everywhere — minimum for mono labels
               - tracking-widest preserved for the uppercase mono aesthetic
             */}
-            <p className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+            <p className="font-mono text-xs tracking-widest break-all text-muted-foreground uppercase opacity-70">
               Source: {currentEntry.originalLine}
             </p>
           </div>
@@ -416,10 +504,12 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
               <NumberInput
                 value={currentEntry.rating}
                 onChange={(val: number) => {
-                  const newSelections = currentEntry.selections.map((s: any) => ({
-                    ...s,
-                    rating: val,
-                  }))
+                  const newSelections = currentEntry.selections.map(
+                    (s: any) => ({
+                      ...s,
+                      rating: val,
+                    })
+                  )
                   updateEntry(currentIndex, {
                     rating: val,
                     selections: newSelections,
@@ -435,15 +525,82 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
         </div>
 
         {/* Row 2: Quick Actions */}
-        {/*
-          Responsive fix:
-          - Was: grid grid-cols-2 gap-2 → sm:flex sm:flex-wrap (abrupt jump)
-          - Now: always flex-wrap so it adapts fluidly at every width.
-          - "Undo All" no longer needs col-span-2 hack.
-          - Button text: was text-[10px] sm:text-xs — now text-xs sm:text-sm for
-            proper readability and consistent scale with the rest of the UI.
-        */}
-        <div className="flex flex-wrap items-center gap-2 border-t border-white/5 pt-3 sm:gap-3">
+        <div className="flex flex-col gap-4 pt-2 md:flex-row md:items-center">
+          {/* Desktop Filters */}
+          <div className="hidden flex-wrap items-center gap-2 md:flex">
+            {FORMATS.map((format) => {
+              // A format is active if it is explicitly selected OR if no filters are applied (All mode)
+              const isActive =
+                selectedFormats.length === 0 ||
+                selectedFormats.includes(format.value)
+              return (
+                <FilterButton
+                  key={format.value}
+                  format={format}
+                  isActive={isActive}
+                  onClick={() => toggleFormat(format.value)}
+                />
+              )
+            })}
+          </div>
+
+          {/* Mobile Filters Dropdown */}
+          <div className="flex md:hidden">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-12 w-full justify-between gap-2 rounded-none border-primary/20 bg-background font-black tracking-tight uppercase"
+                >
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 opacity-70" />
+                    <span>Format Filters</span>
+                  </div>
+                  {selectedFormats.length > 0 ? (
+                    <Badge className="rounded-none bg-primary font-black text-primary-foreground">
+                      {selectedFormats.length} Active
+                    </Badge>
+                  ) : (
+                    <span className="text-[10px] opacity-40">All Formats</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-50 rounded-none border-primary/20 bg-background p-4 shadow-2xl"
+                align="start"
+              >
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {FORMATS.map((format) => {
+                    const isActive =
+                      selectedFormats.length === 0 ||
+                      selectedFormats.includes(format.value)
+                    return (
+                      <FilterButton
+                        key={format.value}
+                        format={format}
+                        isActive={isActive}
+                        onClick={() => toggleFormat(format.value)}
+                        className="h-12 w-full justify-start"
+                      />
+                    )
+                  })}
+                  {selectedFormats.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      className="mt-2 h-10 w-full rounded-none font-bold text-muted-foreground hover:bg-muted/50"
+                      onClick={() => setSelectedFormats([])}
+                    >
+                      Reset to All Formats
+                    </Button>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
+        {/* Row 3: Quick Actions */}
+        <div className="flex flex-wrap items-center gap-2 border-t border-white/5 pt-4 sm:gap-3">
           <Button
             variant="outline"
             size="sm"
@@ -466,28 +623,35 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
             <span className="text-xs sm:text-sm">Select All</span>
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 gap-2 rounded-none border-destructive/20 font-black tracking-tighter uppercase hover:bg-destructive/10"
-            onClick={handleClearAll}
-          >
-            <RefreshCcw className="h-3.5 w-3.5 text-destructive" />
-            <span className="text-xs sm:text-sm">Undo All</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 gap-2 rounded-none border-destructive/20 font-black tracking-tighter uppercase hover:bg-destructive/10"
+              onClick={handleClearAll}
+            >
+              <RotateCcw className="h-3.5 w-3.5 text-destructive" />
+              <span className="text-xs sm:text-sm">Undo All</span>
+            </Button>
+            {currentEntry.selections.length > 0 && (
+              <Badge className="h-9 rounded-none border border-primary/20 bg-primary/5 px-4 text-sm font-black text-primary shadow-none">
+                {currentEntry.selections.length}
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
 
       {/* ── Results ── */}
       <div className="p-4 sm:p-6 lg:p-8">
         {isLoading ? (
-          <div className="grid gap-6">
+          <div className="flex flex-col gap-6">
             {[1, 2, 3].map((i) => (
               <MediaCardSkeleton key={i} />
             ))}
           </div>
         ) : (
-          <div className="grid gap-6">
+          <div className="flex flex-col gap-6">
             <AnimatePresence mode="popLayout">
               {searchResults.map((media: any, index: number) => (
                 <motion.div

@@ -46,7 +46,7 @@ const Home: React.FC = () => {
     window.location.hostname === "127.0.0.1"
 
   return (
-    <div className="mx-auto max-w-5xl animate-in space-y-16 px-4 py-12 duration-1000 fade-in">
+    <div className="mx-auto max-w-5xl animate-in space-y-16 px-1 py-12 duration-1000 fade-in">
       {/* Hero Section */}
       <div className="space-y-8 text-center">
         <div className="space-y-4">

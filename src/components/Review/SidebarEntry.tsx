@@ -14,10 +14,18 @@ interface SidebarEntryProps {
 export const SidebarEntry = memo<SidebarEntryProps>(
   ({ entry, idx, isActive, onClick, onUpdateRating, style }) => {
     return (
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            onClick()
+          }
+        }}
         style={style}
-        className={`group flex w-full items-center justify-between gap-4 rounded-none border p-4 text-left transition-all ${
+        className={`group flex w-full cursor-pointer items-center justify-between gap-4 rounded-none border p-4 text-left transition-all outline-none ${
           isActive
             ? "border-primary/50 bg-primary/10 shadow-inner"
             : "border-transparent hover:bg-white/5"
@@ -58,7 +66,7 @@ export const SidebarEntry = memo<SidebarEntryProps>(
             <div className="h-5 w-5 rounded-none border-2 border-white/10" />
           )}
         </div>
-      </button>
+      </div>
     )
   }
 )

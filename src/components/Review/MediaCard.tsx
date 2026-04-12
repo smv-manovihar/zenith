@@ -1,7 +1,6 @@
 import { memo } from "react"
 import {
   Star,
-  GitMerge,
   Info,
   CheckCircle2,
   Play,
@@ -11,6 +10,8 @@ import {
   XCircle,
   Hash,
   Circle,
+  ExternalLink,
+  SquareLibrary,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -20,7 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { NumberInput } from "@/components/NumberInput"
-import { getScoreStyles, sanitizeHtml } from "@/lib/utils"
+import { getScoreStyles, sanitizeHtml, getStatusStyles, cn } from "@/lib/utils"
 import {
   Select,
   SelectContent,
@@ -86,16 +87,19 @@ export const MediaCard = memo<MediaCardProps>(
     return (
       <div className="animate-in space-y-4 duration-300 fade-in slide-in-from-bottom-2">
         <div
-          className={`glass-card relative flex flex-col gap-4 overflow-hidden rounded-none border p-4 transition-all sm:flex-row sm:gap-6 sm:p-5 ${
+          className={cn(
+            "glass-card relative flex flex-col gap-4 overflow-hidden rounded-none border p-3 transition-all sm:flex-row sm:gap-6 sm:p-5",
             isSelected
-              ? "border-primary bg-primary/10 shadow-[0_0_30px_rgba(var(--primary),0.1)] ring-1 ring-primary/30"
+              ? "border-primary bg-primary/[0.07] shadow-[0_0_40px_-10px_rgba(var(--primary),0.3)] ring-1 ring-primary/40"
               : "border-white/5 hover:border-primary/40 hover:bg-white/5"
-          }`}
+          )}
         >
           {/* Cover Image */}
           <div
             className="h-48 w-full shrink-0 cursor-pointer overflow-hidden rounded-none shadow-2xl ring-1 ring-white/10 sm:h-44 sm:w-32"
-            onClick={() => onSelect(media)}
+            onClick={() =>
+              media.siteUrl && window.open(media.siteUrl, "_blank")
+            }
           >
             <img
               src={media.coverImage?.large}
@@ -118,10 +122,13 @@ export const MediaCard = memo<MediaCardProps>(
                     </Badge>
                   )}
                   <h4
-                    className="line-clamp-2 cursor-pointer text-lg leading-tight font-black tracking-tight transition-colors hover:text-primary sm:text-xl"
-                    onClick={() => onSelect(media)}
+                    className="group line-clamp-2 cursor-pointer text-lg leading-tight font-black tracking-tight transition-colors hover:text-primary sm:text-xl"
+                    onClick={() =>
+                      media.siteUrl && window.open(media.siteUrl, "_blank")
+                    }
                   >
                     {primaryTitle}
+                    <ExternalLink className="ml-2 inline-block h-3 w-3 shrink-0 opacity-0 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100 sm:h-3.5 sm:w-3.5" />
                   </h4>
                   {secondaryTitle && (
                     <p className="mt-0.5 line-clamp-1 text-[9px] font-bold tracking-widest text-muted-foreground uppercase opacity-70">
@@ -145,10 +152,9 @@ export const MediaCard = memo<MediaCardProps>(
                   {media.episodes || "?"} EPISODES
                 </Badge>
                 <Badge
-                  variant="outline"
-                  className="border-primary/20 text-[9px] font-bold text-primary uppercase md:text-[10px]"
+                  className={`border px-2 py-0.5 text-[9px] font-black tracking-widest uppercase md:text-[10px] ${getStatusStyles(media.status).bg} ${getStatusStyles(media.status).text} ${getStatusStyles(media.status).border}`}
                 >
-                  {media.status}
+                  {media.status.replace(/_/g, " ")}
                 </Badge>
                 {media.averageScore && (
                   <Badge
@@ -171,64 +177,24 @@ export const MediaCard = memo<MediaCardProps>(
 
             {/* Actions & Controls Section */}
             <div className="mt-4 flex flex-col gap-3">
-              {/* Primary Buttons Row */}
-              <div className="flex w-full items-center gap-2 sm:gap-3">
-                <Button
-                  size="lg"
-                  variant={isSelected ? "default" : "outline"}
-                  className={`h-11 flex-1 font-black transition-all ${isSelected ? "shadow-xl shadow-primary/30" : "hover:bg-primary hover:text-primary-foreground"}`}
-                  onClick={() => onSelect(media)}
-                >
-                  {isSelected ? (
-                    <>
-                      <CheckCircle2 className="mr-2 h-4 w-4" /> Selected
-                    </>
-                  ) : (
-                    <>
-                      <Circle className="mr-2 h-4 w-4 opacity-50 transition-opacity group-hover:opacity-100" />
-                      Select
-                    </>
-                  )}
-                </Button>
-
-                <div className="flex shrink-0 gap-2">
-                  {hasRelations && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant={isExpanded ? "default" : "outline"}
-                          size="icon"
-                          className="h-11 w-11 shrink-0 rounded-none transition-all"
-                          onClick={() => onToggleExpand?.(media.id)}
-                        >
-                          <GitMerge
-                            className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-90" : ""}`}
-                          />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {isExpanded
-                          ? "Hide Related Shows"
-                          : "Show Related Shows"}
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-11 w-11 shrink-0 rounded-none"
-                        onClick={() => onViewDetails(media)}
-                      >
-                        <Info className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>View Full Details</TooltipContent>
-                  </Tooltip>
-                </div>
-              </div>
+              {/* Primary Select Button: Full width on mobile */}
+              <Button
+                size="lg"
+                variant={isSelected ? "default" : "outline"}
+                className={`h-11 w-full font-black tracking-widest uppercase transition-all ${isSelected ? "shadow-xl shadow-primary/30" : "hover:bg-primary hover:text-primary-foreground"}`}
+                onClick={() => onSelect(media)}
+              >
+                {isSelected ? (
+                  <>
+                    <CheckCircle2 className="mr-2 h-4 w-4" /> Selected
+                  </>
+                ) : (
+                  <>
+                    <Circle className="mr-2 h-4 w-4 opacity-50 transition-opacity group-hover:opacity-100" />
+                    Select This
+                  </>
+                )}
+              </Button>
 
               {/* Tracking Controls Box (Only visible when selected) */}
               {isSelected && onUpdateRating && (
@@ -335,38 +301,84 @@ export const MediaCard = memo<MediaCardProps>(
                   </div>
                 </div>
               )}
+
+              {/* Action Buttons: Moved to Bottom */}
+              <div className="mt-1 flex items-center justify-end border-t border-dashed border-border/50 pt-3">
+                <div className="flex gap-2">
+                  {hasRelations && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={isExpanded ? "default" : "outline"}
+                          size="icon"
+                          className="h-9 w-9 shrink-0 rounded-none transition-all"
+                          onClick={() => onToggleExpand?.(media.id)}
+                        >
+                          <SquareLibrary className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {isExpanded
+                          ? "Hide Related Shows"
+                          : "Show Related Shows"}
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-9 w-9 shrink-0 rounded-none"
+                        onClick={() => onViewDetails(media)}
+                      >
+                        <Info className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>View Full Details</TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Expanded Relations */}
         {isExpanded && media.relations?.edges?.length > 0 && (
-          <div className="ml-8 animate-in space-y-4 border-l-2 border-primary/10 pl-8 duration-500 slide-in-from-top-4">
-            <div className="flex items-center gap-4">
+          <div className="ml-0 animate-in border-l-2 border-primary/10 pl-3 duration-500 slide-in-from-top-4 sm:ml-8 sm:pl-8">
+            <div className="mb-4 flex items-center gap-4">
               <span className="text-[10px] font-black tracking-[0.3em] text-muted-foreground uppercase opacity-50">
                 Related Shows
               </span>
               <div className="h-px flex-1 bg-muted/50" />
             </div>
-            {media.relations.edges
-              .filter((edge: any) => edge.node.type === "ANIME")
-              .map((edge: any) => (
-                <MediaCard
-                  key={edge.node.id}
-                  media={edge.node}
-                  isSelected={isMediaSelected(edge.node.id)}
-                  onSelect={handleToggleSelection}
-                  relationType={edge.relationType}
-                  rating={getMediaRating(edge.node.id)}
-                  onUpdateRating={updateSelectionRating}
-                  isMediaSelected={isMediaSelected}
-                  handleToggleSelection={handleToggleSelection}
-                  getMediaRating={getMediaRating}
-                  updateSelectionRating={updateSelectionRating}
-                  onViewDetails={onViewDetails}
-                  onToggleExpand={onToggleExpand}
-                />
-              ))}
+            <div className="grid grid-cols-1 gap-4">
+              {media.relations.edges
+                .filter((edge: any) => edge.node.type === "ANIME")
+                .map((edge: any) => (
+                  <MediaCard
+                    key={edge.node.id}
+                    media={edge.node}
+                    isSelected={isMediaSelected(edge.node.id)}
+                    onSelect={handleToggleSelection}
+                    relationType={edge.relationType}
+                    rating={getMediaRating(edge.node.id)}
+                    onUpdateRating={updateSelectionRating}
+                    status={status}
+                    onUpdateStatus={onUpdateStatus}
+                    progress={progress}
+                    onUpdateProgress={onUpdateProgress}
+                    totalEpisodes={edge.node.episodes}
+                    isMediaSelected={isMediaSelected}
+                    handleToggleSelection={handleToggleSelection}
+                    getMediaRating={getMediaRating}
+                    updateSelectionRating={updateSelectionRating}
+                    onViewDetails={onViewDetails}
+                    onToggleExpand={onToggleExpand}
+                  />
+                ))}
+            </div>
           </div>
         )}
       </div>
