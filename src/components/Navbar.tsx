@@ -2,11 +2,20 @@ import React from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useProgress } from "./ProgressProvider"
 import { Button } from "@/components/ui/button"
-import { LogOut, CheckCircle2, ArrowRight, Sun, Moon } from "lucide-react"
+import {
+  LogOut,
+  CheckCircle2,
+  ArrowRight,
+  Sun,
+  Moon,
+  ExternalLink,
+  List,
+  Download,
+  Search,
+} from "lucide-react"
 import { useTheme } from "./theme-provider"
 import { cn } from "@/lib/utils"
 import { useScrollDirection } from "@/hooks/useScrollDirection"
-
 import {
   Tooltip,
   TooltipContent,
@@ -18,6 +27,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { SCORE_FORMAT_OPTIONS } from "@/lib/scoreFormat"
 
 export const Navbar: React.FC = () => {
   const { token, setToken, user } = useProgress()
@@ -41,6 +51,12 @@ export const Navbar: React.FC = () => {
     { name: "Sync", path: "/sync" },
   ]
 
+  const scoreFormatLabel =
+    SCORE_FORMAT_OPTIONS.find((o) => o.value === user?.scoreFormat)?.label ??
+    user?.scoreFormat
+
+  const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false)
+
   if (!token && location.pathname !== "/") return null
 
   return (
@@ -51,7 +67,7 @@ export const Navbar: React.FC = () => {
       )}
     >
       <div className="container mx-auto px-4">
-        {/* Main Row: Logo, Desktop Nav, and Logout */}
+        {/* Main Row */}
         <div className="flex h-16 items-center justify-between gap-8">
           <Link
             to="/"
@@ -60,7 +76,7 @@ export const Navbar: React.FC = () => {
             Zenith
           </Link>
 
-          {/* Row 1 - Desktop Navigation Steps */}
+          {/* Desktop Navigation Steps */}
           {token && (
             <div className="hidden flex-1 items-center justify-center gap-6 md:flex">
               {steps.map((step, index) => {
@@ -101,6 +117,33 @@ export const Navbar: React.FC = () => {
                   </React.Fragment>
                 )
               })}
+
+              {/* Standalone links */}
+              <div className="mx-2 h-4 w-px bg-border" />
+              <Link
+                to="/list"
+                className={cn(
+                  "flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-primary",
+                  location.pathname === "/list"
+                    ? "text-primary"
+                    : "text-muted-foreground"
+                )}
+              >
+                <List className="h-3.5 w-3.5" />
+                My List
+              </Link>
+              <Link
+                to="/search"
+                className={cn(
+                  "flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-primary",
+                  location.pathname === "/search"
+                    ? "text-primary"
+                    : "text-muted-foreground"
+                )}
+              >
+                <Search className="h-3.5 w-3.5" />
+                Search
+              </Link>
             </div>
           )}
 
@@ -126,16 +169,16 @@ export const Navbar: React.FC = () => {
             </Tooltip>
 
             {token ? (
-              <Popover>
+              <Popover open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="relative h-10 w-10 gap-0 overflow-hidden rounded-full p-0 ring-offset-background transition-all hover:bg-primary/5 focus-visible:ring-2 focus-visible:outline-none active:scale-95"
+                    className="relative h-9 w-9 gap-0 overflow-hidden rounded-full p-0"
                   >
-                    <Avatar className="h-full w-full border-2 border-primary/20 transition-transform group-hover:scale-105">
+                    <Avatar className="h-full w-full border border-border">
                       <AvatarImage src={user?.avatar} />
-                      <AvatarFallback className="bg-primary/10 font-bold text-primary">
-                        {user?.name?.charAt(0).toUpperCase() || "?"}
+                      <AvatarFallback className="bg-muted text-sm font-bold">
+                        {user?.name?.charAt(0).toUpperCase() ?? "?"}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -143,30 +186,67 @@ export const Navbar: React.FC = () => {
                 <PopoverContent
                   align="end"
                   sideOffset={8}
-                  className="w-64 rounded-none border-primary/10 p-2 pb-1"
+                  className="w-56 rounded-none border-border p-0"
+                  onClick={() => setIsUserMenuOpen(false)}
                 >
-                  <div className="flex flex-col items-center gap-3 p-4 pt-6 text-center">
-                    <Avatar className="h-20 w-20 border-4 border-primary/10 shadow-xl">
+                  {/* User info */}
+                  <div className="flex items-center gap-3 border-b border-border p-3">
+                    <Avatar className="h-10 w-10 border border-border">
                       <AvatarImage src={user?.avatar} />
-                      <AvatarFallback className="bg-primary/10 text-2xl font-black text-primary">
-                        {user?.name?.charAt(0).toUpperCase() || "?"}
+                      <AvatarFallback className="bg-muted text-sm font-bold">
+                        {user?.name?.charAt(0).toUpperCase() ?? "?"}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="space-y-1">
-                      <p className="max-w-[200px] truncate text-xl leading-none font-black tracking-tight">
-                        {user?.name || "User"}
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold">
+                        {user?.name ?? "User"}
                       </p>
+                      {scoreFormatLabel && (
+                        <p className="text-[10px] text-muted-foreground">
+                          {scoreFormatLabel}
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <div className="mx-2 h-px bg-primary/5" />
-                  <Button
-                    variant={"destructive"}
-                    onClick={handleLogout}
-                    className="group flex h-12 w-full cursor-pointer items-center gap-3 rounded-none px-4 transition-all active:scale-[0.98]"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign Out from Zenith
-                  </Button>
+
+                  {/* Quick links */}
+                  <div className="space-y-px p-1">
+                    <PopoverLink
+                      to="/list"
+                      icon={<List className="h-3.5 w-3.5" />}
+                    >
+                      My AniList
+                    </PopoverLink>
+                    <PopoverLink
+                      to="/export"
+                      icon={<Download className="h-3.5 w-3.5" />}
+                    >
+                      Export Collection
+                    </PopoverLink>
+                    {user?.siteUrl && (
+                      <a
+                        href={user.siteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex w-full items-center gap-2.5 rounded-none px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        View on AniList
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Sign out */}
+                  <div className="border-t border-border p-1">
+                    <Button
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-2.5"
+                      variant={"destructive"}
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                      Sign Out
+                    </Button>
+                  </div>
                 </PopoverContent>
               </Popover>
             ) : (
@@ -179,10 +259,10 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* Row 2: Mobile Navigation Steps ONLY */}
+        {/* Mobile Navigation */}
         {token && (
-          <div className="border-t border-border/40 py-3 md:hidden">
-            <div className="scrollbar-none flex w-full items-center justify-between gap-2 overflow-x-auto pb-1">
+          <div className="border-t border-border/40 py-2 md:hidden">
+            <div className="scrollbar-none flex w-full items-center gap-4 overflow-x-auto pb-1">
               {steps.map((step, index) => {
                 const isActive = location.pathname === step.path
                 const isPast =
@@ -193,7 +273,7 @@ export const Navbar: React.FC = () => {
                     <Link
                       to={step.path}
                       className={cn(
-                        "flex shrink-0 items-center gap-2 text-xs font-medium transition-colors hover:text-primary",
+                        "flex shrink-0 items-center gap-1.5 text-xs font-medium transition-colors hover:text-primary",
                         isActive ? "text-primary" : "text-muted-foreground"
                       )}
                     >
@@ -226,5 +306,26 @@ export const Navbar: React.FC = () => {
         )}
       </div>
     </nav>
+  )
+}
+
+// Small helper for popover nav links
+function PopoverLink({
+  to,
+  icon,
+  children,
+}: {
+  to: string
+  icon: React.ReactNode
+  children: React.ReactNode
+}) {
+  return (
+    <Link
+      to={to}
+      className="flex w-full items-center gap-2.5 rounded-none px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+    >
+      {icon}
+      {children}
+    </Link>
   )
 }

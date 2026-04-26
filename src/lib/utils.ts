@@ -2,40 +2,55 @@ import React from "react"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Star } from "lucide-react"
+import type { AniListScoreFormat } from "./scoreFormat"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const AI_PROMPT = `Act as a strict data parsing system. I will provide a raw list of anime titles and ratings below. Convert them into a sequentially numbered list where every line exactly matches this pattern: "[Anime Name] ([Score]/10)".
-
-Rules:
-1. **Exact format:** Follow this syntax precisely: "1. Spirited Away (8.6/10)"
-2. **Normalize scores:** Mathematically convert any non-10-point scales into a 10-point scale (e.g., convert 85/100 to 8.5/10; convert 4.5/5 to 9.0/10). Round to one decimal place.
-3. **Title standardization:** Use the most common English or Romaji title. Remove any extraneous text, years, or messy formatting from the original input.
-4. **Zero chatter:** Output ONLY the parsed list. Do not include any introductory text, acknowledgments, formatting explanations, or concluding remarks. Just the raw data.
-
-Data to parse:
-`
+// AI_PROMPT is now format-aware — import getAIPrompt from "./scoreFormat" instead.
 
 export const normalizeTitle = (title: string | null | undefined) => {
   if (!title) return ""
   return title.toLowerCase().replace(/[^a-z0-9]/g, "")
 }
 
-export const getScoreStyles = (score: number) => {
-  if (score >= 90)
+/**
+ * Normalises a score from any AniList format to a 0–100 baseline for
+ * consistent threshold comparisons in getScoreStyles.
+ */
+function toBaseline100(score: number, format?: AniListScoreFormat): number {
+  if (!format) return score // averageScore is 0-100
+  switch (format) {
+    case "POINT_10_DECIMAL":
+    case "POINT_10":
+      return score * 10
+    case "POINT_5":
+      return (score / 5) * 100
+    case "POINT_3":
+      return (score / 3) * 100
+    case "POINT_100":
+    default:
+      return score
+  }
+}
+
+export const getScoreStyles = (
+  score: number,
+  format?: AniListScoreFormat
+) => {
+  const s = toBaseline100(score, format)
+  if (s >= 90)
     return {
       color: "text-yellow-400",
       border: "border-yellow-400/20",
       bg: "bg-yellow-400/5",
       icon: React.createElement(Star, {
-        className:
-          "h-3 w-3 fill-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.5)]",
+        className: "h-3 w-3 fill-yellow-400",
       }),
       label: "MASTERPIECE",
     }
-  if (score >= 80)
+  if (s >= 80)
     return {
       color: "text-emerald-500",
       border: "border-emerald-500/20",
@@ -43,7 +58,7 @@ export const getScoreStyles = (score: number) => {
       icon: React.createElement(Star, { className: "h-3 w-3 fill-emerald-500" }),
       label: "EXCELLENT",
     }
-  if (score >= 70)
+  if (s >= 70)
     return {
       color: "text-blue-500",
       border: "border-blue-500/20",
@@ -51,7 +66,7 @@ export const getScoreStyles = (score: number) => {
       icon: React.createElement(Star, { className: "h-3 w-3 fill-blue-500" }),
       label: "GOOD",
     }
-  if (score >= 50)
+  if (s >= 50)
     return {
       color: "text-zinc-500",
       border: "border-zinc-500/20",

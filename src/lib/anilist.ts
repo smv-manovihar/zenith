@@ -148,10 +148,14 @@ export const queryAniList = async (
 }
 
 export const SEARCH_ANIME_QUERY = `
-  query ($search: String, $formatList: [MediaFormat]) {
-    Page(page: 1, perPage: 10) {
-      media(search: $search, type: ANIME, format_in: $formatList) {
+  query ($search: String, $season: MediaSeason, $seasonYear: Int, $format_in: [MediaFormat], $sort: [MediaSort], $page: Int) {
+    Page(page: $page, perPage: 24) {
+      pageInfo {
+        hasNextPage
+      }
+      media(search: $search, type: ANIME, season: $season, seasonYear: $seasonYear, format_in: $format_in, sort: $sort) {
         id
+        idMal
         title {
           romaji
           english
@@ -165,7 +169,32 @@ export const SEARCH_ANIME_QUERY = `
         format
         status
         episodes
+        duration
         averageScore
+        meanScore
+        popularity
+        season
+        seasonYear
+        source
+        genres
+        startDate { year month day }
+        endDate { year month day }
+        mediaListEntry {
+          id
+          status
+          score
+          progress
+        }
+        studios {
+          nodes {
+            name
+            isAnimationStudio
+          }
+        }
+        trailer {
+          id
+          site
+        }
         siteUrl
         relations {
           edges {
@@ -207,6 +236,78 @@ export const SAVE_MEDIA_LIST_ENTRY = `
   }
 `;
 
+export const UPDATE_USER_SETTINGS = `
+  mutation ($scoreFormat: ScoreFormat) {
+    UpdateUser (scoreFormat: $scoreFormat) {
+      id
+      mediaListOptions {
+        scoreFormat
+      }
+    }
+  }
+`;
+
+export const DELETE_MEDIA_LIST_ENTRY = `
+  mutation ($id: Int!) {
+    DeleteMediaListEntry (id: $id) {
+      deleted
+    }
+  }
+`;
+
+export const GET_MEDIA_LIST_COLLECTION = `
+  query ($userId: Int!, $type: MediaType!) {
+    MediaListCollection(userId: $userId, type: $type) {
+      lists {
+        name
+        status
+        entries {
+          id
+          score
+          status
+          progress
+          updatedAt
+          createdAt
+          startedAt { year month day }
+          completedAt { year month day }
+          media {
+            id
+            idMal
+            title {
+              romaji
+              english
+            }
+            coverImage {
+              large
+              medium
+            }
+            bannerImage
+            description
+            format
+            status
+            episodes
+            duration
+            averageScore
+            popularity
+            trending
+            startDate { year month day }
+            season
+            seasonYear
+            genres
+            studios {
+              nodes {
+                name
+                isAnimationStudio
+              }
+            }
+            siteUrl
+          }
+        }
+      }
+    }
+  }
+`;
+
 export const GET_VIEWER_QUERY = `
   query {
     Viewer {
@@ -215,6 +316,7 @@ export const GET_VIEWER_QUERY = `
       avatar {
         large
       }
+      siteUrl
       mediaListOptions {
         scoreFormat
       }

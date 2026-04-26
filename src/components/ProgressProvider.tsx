@@ -28,6 +28,7 @@ export type AniListStatus =
 
 export interface Selection {
   id: number
+  idMal?: number | null
   title: string
   image: string
   rating: number
@@ -39,8 +40,10 @@ export interface Selection {
 }
 
 export interface UserData {
+  id: number
   name: string
   avatar: string
+  siteUrl?: string
   scoreFormat: string
   mediaListOptions: {
     scoreFormat: string
@@ -72,6 +75,7 @@ interface ProgressContextType {
   lastVisitedIndex: number
   setLastVisitedIndex: (index: number) => void
   user: UserData | null
+  setUser: (user: UserData | null) => void
   clientId: string
 }
 
@@ -138,7 +142,7 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
   })
 
   useEffect(() => {
-    if (token && !user) {
+    if (token && (!user || !user.id)) {
       const controller = new AbortController()
       const fetchUser = async () => {
         try {
@@ -151,8 +155,10 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
           )
           if (response.data?.Viewer) {
             const userData = {
+              id: response.data.Viewer.id,
               name: response.data.Viewer.name,
               avatar: response.data.Viewer.avatar.large,
+              siteUrl: response.data.Viewer.siteUrl,
               scoreFormat: response.data.Viewer.mediaListOptions.scoreFormat,
               mediaListOptions: {
                 scoreFormat: response.data.Viewer.mediaListOptions.scoreFormat,
@@ -251,6 +257,10 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
       lastVisitedIndex,
       setLastVisitedIndex,
       user,
+      setUser: (u: UserData | null) => {
+        setUser(u)
+        if (u) Storage.setUser(u)
+      },
       clientId,
     }),
     [

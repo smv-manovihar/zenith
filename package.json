@@ -16,6 +16,7 @@
     "@fontsource-variable/space-grotesk": "^5.2.10",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-query": "^5.98.0",
+    "@tanstack/react-virtual": "^3.13.24",
     "axios": "^1.15.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

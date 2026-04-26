@@ -8,6 +8,10 @@ import {
   Circle,
   ExternalLink,
   SquareLibrary,
+  Plus,
+  Building2,
+  Calendar,
+  BookOpen,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -17,7 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { NumberInput } from "@/components/NumberInput"
-import { getScoreStyles, sanitizeHtml, getStatusStyles, cn } from "@/lib/utils"
+import { getScoreStyles, getStatusStyles, cn } from "@/lib/utils"
 import {
   Select,
   SelectContent,
@@ -26,6 +30,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { type AniListStatus } from "@/components/ProgressProvider"
+
+const stripHtml = (html: string) => html.replace(/<[^>]*>?/gm, "")
 
 interface MediaCardProps {
   media: any
@@ -47,6 +53,9 @@ interface MediaCardProps {
   getMediaRating: (id: number) => number
   updateSelectionRating: (id: number, rating: number) => void
   onViewDetails: (media: any) => void
+  hideSelection?: boolean
+  showEditButton?: boolean
+  onAdd?: (media: any) => void
 }
 
 export const MediaCard = memo<MediaCardProps>(
@@ -70,6 +79,9 @@ export const MediaCard = memo<MediaCardProps>(
     getMediaRating,
     updateSelectionRating,
     onViewDetails,
+    hideSelection,
+    showEditButton,
+    onAdd,
   }) => {
     const primaryTitle = media.title.english || media.title.romaji || "No Title"
     const secondaryTitle =
@@ -131,6 +143,36 @@ export const MediaCard = memo<MediaCardProps>(
                       {secondaryTitle}
                     </p>
                   )}
+
+                  {/* Studio, Season, and Source Info */}
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold tracking-tight text-muted-foreground/50 uppercase">
+                    {media.studios?.nodes?.find(
+                      (n: any) => n.isAnimationStudio
+                    ) && (
+                      <span className="flex items-center gap-1 text-primary/70">
+                        <Building2 className="h-2.5 w-2.5" />
+                        {
+                          media.studios.nodes.find(
+                            (n: any) => n.isAnimationStudio
+                          ).name
+                        }
+                      </span>
+                    )}
+                    {media.season && (
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-2.5 w-2.5" />
+                        {media.season.charAt(0) +
+                          media.season.slice(1).toLowerCase()}{" "}
+                        {media.seasonYear}
+                      </span>
+                    )}
+                    {media.source && (
+                      <span className="flex items-center gap-1">
+                        <BookOpen className="h-2.5 w-2.5" />
+                        {media.source.replace(/_/g, " ")}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <Badge
                   variant={isSelected ? "default" : "secondary"}
@@ -163,37 +205,36 @@ export const MediaCard = memo<MediaCardProps>(
                   </Badge>
                 )}
               </div>
-              <p
-                className="line-clamp-2 text-xs leading-relaxed text-muted-foreground"
-                dangerouslySetInnerHTML={{
-                  __html: sanitizeHtml(media.description || ""),
-                }}
-              />
+              <p className="hidden truncate text-[11px] leading-snug text-muted-foreground/80 sm:block">
+                {stripHtml(media.description || "")}
+              </p>
             </div>
 
             {/* Actions & Controls Section */}
             <div className="mt-4 flex flex-col gap-3">
               {/* Primary Select Button: Full width on mobile */}
-              <Button
-                size="lg"
-                variant={isSelected ? "default" : "outline"}
-                className={`h-11 w-full font-black tracking-widest uppercase transition-all ${isSelected ? "shadow-xl shadow-primary/30" : "hover:bg-primary hover:text-primary-foreground"}`}
-                onClick={() => onSelect(media)}
-              >
-                {isSelected ? (
-                  <>
-                    <CheckCircle2 className="mr-2 h-4 w-4" /> Selected
-                  </>
-                ) : (
-                  <>
-                    <Circle className="mr-2 h-4 w-4 opacity-50 transition-opacity group-hover:opacity-100" />
-                    Select This
-                  </>
-                )}
-              </Button>
+              {!hideSelection && (
+                <Button
+                  size="lg"
+                  variant={isSelected ? "default" : "outline"}
+                  className={`h-11 w-full font-black tracking-widest uppercase transition-all ${isSelected ? "shadow-xl shadow-primary/30" : "hover:bg-primary hover:text-primary-foreground"}`}
+                  onClick={() => onSelect(media)}
+                >
+                  {isSelected ? (
+                    <>
+                      <CheckCircle2 className="mr-2 h-4 w-4" /> Selected
+                    </>
+                  ) : (
+                    <>
+                      <Circle className="mr-2 h-4 w-4 opacity-50 transition-opacity group-hover:opacity-100" />
+                      Select This
+                    </>
+                  )}
+                </Button>
+              )}
 
-              {/* Tracking Controls Box (Only visible when selected) */}
-              {isSelected && onUpdateRating && (
+              {/* Tracking Controls Box (Only visible when selected or showEditButton is true) */}
+              {(isSelected || showEditButton) && onUpdateRating && (
                 <div className="flex animate-in flex-wrap items-stretch gap-1.5 rounded-none border border-primary/10 bg-primary/5 p-1.5 duration-300 fade-in slide-in-from-top-2 md:p-2 xl:gap-2">
                   {/* Status Dropdown */}
                   <div className="min-w-[140px] flex-1">
@@ -325,6 +366,17 @@ export const MediaCard = memo<MediaCardProps>(
                           : "Show Related Shows"}
                       </TooltipContent>
                     </Tooltip>
+                  )}
+
+                  {onAdd && !status && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="h-9 rounded-none px-4 font-black tracking-widest uppercase"
+                      onClick={() => onAdd(media)}
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Add to List
+                    </Button>
                   )}
 
                   <Tooltip>

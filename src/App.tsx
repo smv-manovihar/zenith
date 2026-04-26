@@ -15,6 +15,9 @@ const Import = lazy(() => import("./views/Import"))
 const Review = lazy(() => import("./views/Review"))
 const Sync = lazy(() => import("./views/Sync"))
 const AuthCallback = lazy(() => import("./views/AuthCallback"))
+const ListManagement = lazy(() => import("./views/ListManagement"))
+const Export = lazy(() => import("./views/Export"))
+const Search = lazy(() => import("./views/Search"))
 
 const LoadingFallback = () => <LoadingScreen message="Loading Zenith" />
 
@@ -44,6 +47,18 @@ function App() {
                 <Route
                   path="/sync"
                   element={token ? <Sync /> : <Navigate to="/" replace />}
+                />
+                <Route
+                  path="/list"
+                  element={token ? <ListManagement /> : <Navigate to="/" replace />}
+                />
+                <Route
+                  path="/search"
+                  element={token ? <Search /> : <Navigate to="/" replace />}
+                />
+                <Route
+                  path="/export"
+                  element={token ? <Export /> : <Navigate to="/" replace />}
                 />
               </Routes>
             </Suspense>

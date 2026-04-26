@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type FC } from "react"
+import { useState, useEffect, useCallback, useRef, type FC } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -11,17 +11,23 @@ import {
   RotateCcw,
   Tv,
   Clapperboard,
+  Music,
+  MonitorPlay,
+  Search,
+  Loader2,
+  Undo2,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { NumberInput } from "@/components/NumberInput"
-import { queryAniList, SEARCH_ANIME_QUERY } from "@/lib/anilist"
+import { queryAniList, SEARCH_ANIME_QUERY, rateLimiter } from "@/lib/anilist"
 import { Storage } from "@/lib/storage"
 import { normalizeTitle, cn } from "@/lib/utils"
 import { ReviewSidebar } from "./ReviewSidebar"
 import { MediaCardSkeleton } from "./MediaCardSkeleton"
+import { toast } from "sonner"
 import { MediaCard } from "./MediaCard"
 import {
   Tooltip,
@@ -30,11 +36,23 @@ import {
 } from "@/components/ui/tooltip"
 import { useDebounce } from "@/hooks/useDebounce"
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Filter } from "lucide-react"
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { SlidersHorizontal } from "lucide-react"
 
 interface MediaSelectionAreaProps {
   currentEntry: any
@@ -48,10 +66,20 @@ interface MediaSelectionAreaProps {
 
 const FORMATS = [
   { value: "TV", label: "TV Series", icon: Tv },
+  { value: "TV_SHORT", label: "TV Short", icon: MonitorPlay },
   { value: "MOVIE", label: "Movie", icon: Clapperboard },
   { value: "OVA", label: "OVA", icon: Layers },
   { value: "ONA", label: "ONA", icon: Sparkles },
   { value: "SPECIAL", label: "Special", icon: Star },
+  { value: "MUSIC", label: "Music", icon: Music },
+]
+
+const SORTS = [
+  { value: "POPULARITY_DESC", label: "Popularity" },
+  { value: "SCORE_DESC", label: "Score" },
+  { value: "TRENDING_DESC", label: "Trending" },
+  { value: "START_DATE_DESC", label: "Newest" },
+  { value: "START_DATE", label: "Oldest" },
 ]
 
 interface FilterButtonProps {
@@ -99,10 +127,54 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
   onClearFilters,
 }) => {
   const [searchQuery, setSearchQuery] = useState("")
+  const originalName = useRef("")
   const [selectedFormats, setSelectedFormats] = useState<string[]>(() => {
     const saved = Storage.getPreferredFormats()
     return saved ? JSON.parse(saved) : FORMATS.map((f) => f.value)
   })
+  const [sort, setSort] = useState<string>("POPULARITY_DESC")
+  const [appliedFilters, setAppliedFilters] = useState({
+    query: searchQuery,
+    formats: selectedFormats,
+    sort: sort,
+  })
+
+  const isFiltersDirty =
+    searchQuery !== appliedFilters.query ||
+    JSON.stringify(selectedFormats) !==
+      JSON.stringify(appliedFilters.formats) ||
+    sort !== appliedFilters.sort
+
+  const handleSearch = useCallback(() => {
+    if (rateLimiter.isRateLimited) {
+      const seconds = Math.ceil(rateLimiter.waitTime / 1000)
+      toast.warning(
+        `AniList Rate Limit: Please wait ${seconds}s before searching again.`,
+        {
+          id: "rate-limit-toast",
+        }
+      )
+      return
+    }
+    setAppliedFilters({
+      query: searchQuery,
+      formats: selectedFormats,
+      sort: sort,
+    })
+  }, [searchQuery, selectedFormats, sort, rateLimiter])
+
+  // Auto-apply search when entry changes
+  useEffect(() => {
+    if (currentEntry) {
+      setSearchQuery(currentEntry.name)
+      originalName.current = currentEntry.name
+      setAppliedFilters({
+        query: currentEntry.name,
+        formats: selectedFormats,
+        sort: sort,
+      })
+    }
+  }, [currentIndex]) // Only on index change to preserve "original" name for the current entry
 
   const toggleFormat = useCallback((formatValue: string) => {
     setSelectedFormats((prev) => {
@@ -144,24 +216,30 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
     }
   }, [currentIndex, currentEntry?.name])
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["animeSearch", debouncedSearchQuery, selectedFormats],
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: [
+      "animeSearch",
+      appliedFilters.query,
+      appliedFilters.formats,
+      appliedFilters.sort,
+    ],
     queryFn: ({ signal }) =>
       queryAniList(
         SEARCH_ANIME_QUERY,
         {
-          search: debouncedSearchQuery,
-          formatList:
-            selectedFormats.length > 0 &&
-            selectedFormats.length < FORMATS.length
-              ? selectedFormats
+          search: appliedFilters.query,
+          format_in:
+            appliedFilters.formats.length > 0 &&
+            appliedFilters.formats.length < FORMATS.length
+              ? appliedFilters.formats
               : undefined,
+          sort: appliedFilters.sort ? [appliedFilters.sort] : undefined,
         },
         undefined,
         3,
         signal
       ),
-    enabled: !!debouncedSearchQuery,
+    enabled: !!appliedFilters.query,
   })
 
   const searchResults = data?.data?.Page?.media || []
@@ -450,20 +528,44 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
               </div>
 
               {isEditingSearch ? (
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => {
-                    const newVal = e.target.value
-                    setSearchQuery(newVal)
-                    updateEntry(currentIndex, { name: newVal })
-                  }}
-                  className="h-10 text-base font-bold sm:h-11"
-                  autoFocus
-                  onBlur={() => setIsEditingSearch(false)}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && setIsEditingSearch(false)
-                  }
-                />
+                <div className="relative flex min-w-0 flex-1 items-center">
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => {
+                      const newVal = e.target.value
+                      setSearchQuery(newVal)
+                      updateEntry(currentIndex, { name: newVal })
+                    }}
+                    className="h-10 pr-10 text-base font-bold sm:h-11"
+                    autoFocus
+                    onBlur={() => {
+                      if (!searchQuery.trim()) {
+                        const restored = originalName.current
+                        setSearchQuery(restored)
+                        updateEntry(currentIndex, { name: restored })
+                      }
+                      setIsEditingSearch(false)
+                    }}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && setIsEditingSearch(false)
+                    }
+                  />
+                  {searchQuery !== originalName.current && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 h-8 w-8 text-muted-foreground hover:text-primary"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const restored = originalName.current
+                        setSearchQuery(restored)
+                        updateEntry(currentIndex, { name: restored })
+                      }}
+                    >
+                      <Undo2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               ) : (
                 <div className="group flex min-w-0 flex-1 items-center gap-2">
                   <h3 className="text-lg font-black tracking-tighter wrap-break-word uppercase underline decoration-primary/30 underline-offset-8 sm:text-2xl lg:text-3xl">
@@ -538,78 +640,206 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
           </div>
         </div>
 
-        {/* Row 2: Quick Actions */}
+        {/* Row 2: Filters & Search */}
         <div className="flex flex-col gap-4 pt-2 md:flex-row md:items-center">
-          {/* Desktop Filters */}
-          <div className="hidden flex-wrap items-center gap-2 md:flex">
-            {FORMATS.map((format) => {
-              // A format is active if it is explicitly selected OR if no filters are applied (All mode)
-              const isActive =
-                selectedFormats.length === 0 ||
-                selectedFormats.includes(format.value)
-              return (
-                <FilterButton
-                  key={format.value}
-                  format={format}
-                  isActive={isActive}
-                  onClick={() => toggleFormat(format.value)}
-                />
-              )
-            })}
+          {/* Desktop Filters (hidden on mobile) */}
+          <div className="hidden flex-1 flex-wrap items-center gap-3 md:flex">
+            <div className="flex flex-wrap items-center gap-2">
+              {FORMATS.map((format) => {
+                const isActive =
+                  selectedFormats.length === 0 ||
+                  selectedFormats.includes(format.value)
+                return (
+                  <FilterButton
+                    key={format.value}
+                    format={format}
+                    isActive={isActive}
+                    onClick={() => toggleFormat(format.value)}
+                  />
+                )
+              })}
+            </div>
+
+            <div className="h-8 w-px bg-border/50" />
+
+            {/* Sort Filter */}
+            <div className="flex items-center gap-2">
+              <Select value={sort} onValueChange={setSort}>
+                <SelectTrigger className="h-10 w-[140px] rounded-none border-primary/20 bg-background font-black tracking-tight uppercase">
+                  <SelectValue placeholder="Sort By" />
+                </SelectTrigger>
+                <SelectContent className="rounded-none border-primary/20 bg-background font-black uppercase shadow-2xl">
+                  {SORTS.map((s) => (
+                    <SelectItem
+                      key={s.value}
+                      value={s.value}
+                      className="rounded-none focus:bg-primary/10 focus:text-primary"
+                    >
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              onClick={handleSearch}
+              disabled={!isFiltersDirty || isFetching}
+              className={cn(
+                "h-10 gap-2 rounded-none px-6 font-black tracking-tighter uppercase transition-all",
+                isFiltersDirty
+                  ? "bg-primary text-primary-foreground shadow-[0_0_20px_rgba(var(--primary),0.4)]"
+                  : "bg-muted text-muted-foreground opacity-50"
+              )}
+            >
+              {isFetching ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+              <span>Apply</span>
+            </Button>
           </div>
 
-          {/* Mobile Filters Dropdown */}
+          {/* Mobile Filters Drawer (visible only on mobile) */}
           <div className="flex md:hidden">
-            <Popover>
-              <PopoverTrigger asChild>
+            <Drawer>
+              <DrawerTrigger asChild>
                 <Button
                   variant="outline"
-                  className="h-12 w-full justify-between gap-2 rounded-none border-primary/20 bg-background font-black tracking-tight uppercase"
+                  className={cn(
+                    "h-12 w-full justify-between gap-2 rounded-none border-primary/20 bg-background font-black tracking-tight uppercase",
+                    isFiltersDirty &&
+                      "border-primary/50 bg-primary/5 shadow-[0_0_15px_rgba(var(--primary),0.1)]"
+                  )}
                 >
                   <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 opacity-70" />
-                    <span>Format Filters</span>
+                    <SlidersHorizontal className="h-4 w-4 text-primary" />
+                    <span>Filters & Sort</span>
                   </div>
-                  {selectedFormats.length > 0 ? (
-                    <Badge className="rounded-none bg-primary font-black text-primary-foreground">
-                      {selectedFormats.length} Active
+                  {isFiltersDirty ? (
+                    <Badge className="animate-pulse rounded-none bg-primary font-black">
+                      Pending Changes
                     </Badge>
                   ) : (
-                    <span className="text-[10px] opacity-40">All Formats</span>
+                    <div className="flex items-center gap-1.5 opacity-40">
+                      {sort !== "POPULARITY_DESC" ||
+                      selectedFormats.length > 0 ? (
+                        <>
+                          {sort !== "POPULARITY_DESC" && (
+                            <span className="text-[10px]">
+                              {SORTS.find((s) => s.value === sort)?.label}
+                            </span>
+                          )}
+                          {sort !== "POPULARITY_DESC" &&
+                            selectedFormats.length > 0 && (
+                              <div className="h-1 w-1 rounded-full bg-border" />
+                            )}
+                          {selectedFormats.length > 0 && (
+                            <span className="text-[10px]">
+                              {selectedFormats.length} Formats
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-[10px]">Default</span>
+                      )}
+                    </div>
                   )}
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-50 rounded-none border-primary/20 bg-background p-4 shadow-2xl"
-                align="start"
-              >
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {FORMATS.map((format) => {
-                    const isActive =
-                      selectedFormats.length === 0 ||
-                      selectedFormats.includes(format.value)
-                    return (
-                      <FilterButton
-                        key={format.value}
-                        format={format}
-                        isActive={isActive}
-                        onClick={() => toggleFormat(format.value)}
-                        className="h-12 w-full justify-start"
-                      />
-                    )
-                  })}
-                  {selectedFormats.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      className="mt-2 h-10 w-full rounded-none font-bold text-muted-foreground hover:bg-muted/50"
-                      onClick={() => setSelectedFormats([])}
-                    >
-                      Reset to All Formats
-                    </Button>
-                  )}
+              </DrawerTrigger>
+              <DrawerContent className="min-h-[96vh] rounded-t-none border-t-primary/20 bg-background pb-8 outline-hidden">
+                <DrawerHeader className="border-b border-border/50 pb-6 text-left">
+                  <DrawerTitle className="text-2xl font-black tracking-tighter uppercase">
+                    Refine Search
+                  </DrawerTitle>
+                  <DrawerDescription className="font-bold text-muted-foreground/60 uppercase">
+                    Adjust formats and sorting to find the right entry.
+                  </DrawerDescription>
+                </DrawerHeader>
+
+                <div className="scrollbar-thin scrollbar-thumb-primary/10 flex-1 space-y-8 overflow-y-auto p-6">
+                  {/* Formats Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-black tracking-widest text-muted-foreground uppercase">
+                        Media Formats
+                      </h4>
+                      {selectedFormats.length > 0 && (
+                        <Button
+                          variant="link"
+                          className="h-auto p-0 text-[10px] font-black text-primary uppercase"
+                          onClick={() => setSelectedFormats([])}
+                        >
+                          Reset
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {FORMATS.map((format) => {
+                        const isActive =
+                          selectedFormats.length === 0 ||
+                          selectedFormats.includes(format.value)
+                        return (
+                          <FilterButton
+                            key={format.value}
+                            format={format}
+                            isActive={isActive}
+                            onClick={() => toggleFormat(format.value)}
+                            className="h-12 w-full justify-start text-xs"
+                          />
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Sort Section */}
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-black tracking-widest text-muted-foreground uppercase">
+                      Sort Results By
+                    </h4>
+                    <div className="grid grid-cols-1 gap-2">
+                      {SORTS.map((s) => (
+                        <Button
+                          key={s.value}
+                          variant={sort === s.value ? "default" : "outline"}
+                          className={cn(
+                            "h-12 justify-start rounded-none border-primary/20 font-black uppercase",
+                            sort === s.value &&
+                              "bg-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary),0.3)]"
+                          )}
+                          onClick={() => setSort(s.value)}
+                        >
+                          {s.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </PopoverContent>
-            </Popover>
+
+                <DrawerFooter className="pb-0">
+                  <DrawerClose asChild>
+                    <Button
+                      onClick={handleSearch}
+                      disabled={isFetching}
+                      className={cn(
+                        "h-14 w-full gap-3 rounded-none text-base font-black tracking-tighter uppercase transition-all",
+                        isFiltersDirty
+                          ? "bg-primary text-primary-foreground shadow-[0_0_25px_rgba(var(--primary),0.4)]"
+                          : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {isFetching ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Search className="h-5 w-5" />
+                      )}
+                      <span>{isFiltersDirty ? "Apply & Search" : "Close"}</span>
+                    </Button>
+                  </DrawerClose>
+                </DrawerFooter>
+              </DrawerContent>
+            </Drawer>
           </div>
         </div>
 
