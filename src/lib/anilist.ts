@@ -256,8 +256,8 @@ export const DELETE_MEDIA_LIST_ENTRY = `
 `;
 
 export const GET_MEDIA_LIST_COLLECTION = `
-  query ($userId: Int!, $type: MediaType!) {
-    MediaListCollection(userId: $userId, type: $type) {
+  query ($userId: Int!, $type: MediaType!, $status: MediaListStatus) {
+    MediaListCollection(userId: $userId, type: $type, status: $status) {
       lists {
         name
         status
@@ -290,17 +290,46 @@ export const GET_MEDIA_LIST_COLLECTION = `
             averageScore
             popularity
             trending
+            source
+            genres
             startDate { year month day }
+            endDate { year month day }
             season
             seasonYear
-            genres
             studios {
               nodes {
                 name
                 isAnimationStudio
               }
             }
+            trailer {
+              id
+              site
+            }
             siteUrl
+            relations {
+              edges {
+                relationType
+                node {
+                  id
+                  title {
+                    romaji
+                    english
+                    native
+                  }
+                  coverImage {
+                    large
+                  }
+                  siteUrl
+                  description
+                  status
+                  episodes
+                  averageScore
+                  format
+                  type
+                }
+              }
+            }
           }
         }
       }

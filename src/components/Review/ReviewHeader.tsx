@@ -1,5 +1,6 @@
 import { type FC } from "react"
 import { AlertCircle } from "lucide-react"
+import { ReviewSidebar } from "./ReviewSidebar"
 
 interface ReviewHeaderProps {
   entriesCount: number
@@ -7,6 +8,14 @@ interface ReviewHeaderProps {
   entriesWithMissingScores: number
   isFilterActive?: boolean
   onToggleMissingFilter?: () => void
+  // Sidebar props
+  entries: any[]
+  currentIndex: number
+  onSelectEntry: (index: number) => void
+  onUpdateRating: (index: number, rating: number) => void
+  searchQuery?: string
+  onSearchChange?: (val: string) => void
+  onClearFilters?: () => void
 }
 
 export const ReviewHeader: FC<ReviewHeaderProps> = ({
@@ -15,16 +24,40 @@ export const ReviewHeader: FC<ReviewHeaderProps> = ({
   entriesWithMissingScores,
   isFilterActive,
   onToggleMissingFilter,
+  entries,
+  currentIndex,
+  onSelectEntry,
+  onUpdateRating,
+  searchQuery,
+  onSearchChange,
+  onClearFilters,
 }) => {
   return (
     <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
-      <div className="min-w-0 flex-1">
-        <h2 className="text-2xl font-black tracking-tight uppercase sm:text-3xl">
-          Review Matches
-        </h2>
-        <p className="font-medium text-muted-foreground">
-          Verify and match imported entries with AniList database records.
-        </p>
+      <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-black tracking-tight uppercase sm:text-3xl">
+            Review Matches
+          </h2>
+          <p className="font-medium text-muted-foreground">
+            Verify and match imported entries with AniList records.
+          </p>
+        </div>
+
+        {/* Mobile List Trigger */}
+        <div className="shrink-0 lg:hidden">
+          <ReviewSidebar
+            entries={entries}
+            currentIndex={currentIndex}
+            onSelectEntry={onSelectEntry}
+            onUpdateRating={onUpdateRating}
+            isMobile
+            searchQuery={searchQuery}
+            onSearchChange={onSearchChange}
+            isFilterActive={isFilterActive}
+            onClearFilters={onClearFilters}
+          />
+        </div>
       </div>
       <div className="flex w-full flex-col items-end gap-2 md:w-auto">
         {entriesWithMissingScores > 0 && (

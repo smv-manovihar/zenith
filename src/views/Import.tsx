@@ -502,8 +502,8 @@ const Import: FC = () => {
           )}
         </div>
 
-        <div className="grid gap-6 sm:gap-8 md:grid-cols-3">
-          <div className="space-y-6 md:col-span-2">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
             <Card className="rounded-none border-primary/10 shadow-lg">
               <CardHeader className="flex flex-col space-y-4 pb-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
                 <div className="space-y-1">

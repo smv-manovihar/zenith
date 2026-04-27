@@ -6,7 +6,6 @@ import {
   Play,
   Hash,
   Circle,
-  ExternalLink,
   SquareLibrary,
   Plus,
   Building2,
@@ -53,10 +52,23 @@ interface MediaCardProps {
   getMediaRating: (id: number) => number
   updateSelectionRating: (id: number, rating: number) => void
   onViewDetails: (media: any) => void
+  onStudioClick?: (studioName: string) => void
   hideSelection?: boolean
   showEditButton?: boolean
   onAdd?: (media: any) => void
 }
+
+const AniListIcon = ({ className }: { className?: string }) => (
+  <svg
+    fill="currentColor"
+    viewBox="0 0 24 24"
+    role="img"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <path d="M6.361 2.943 0 21.056h4.942l1.077-3.133H11.4l1.052 3.133H22.9c.71 0 1.1-.392 1.1-1.101V17.53c0-.71-.39-1.101-1.1-1.101h-6.483V4.045c0-.71-.392-1.102-1.101-1.102h-2.422c-.71 0-1.101.392-1.101 1.102v1.064l-.758-2.166zm2.324 5.948 1.688 5.018H7.144z" />
+  </svg>
+)
 
 export const MediaCard = memo<MediaCardProps>(
   ({
@@ -79,6 +91,7 @@ export const MediaCard = memo<MediaCardProps>(
     getMediaRating,
     updateSelectionRating,
     onViewDetails,
+    onStudioClick,
     hideSelection,
     showEditButton,
     onAdd,
@@ -98,16 +111,14 @@ export const MediaCard = memo<MediaCardProps>(
           className={cn(
             "glass-card relative flex flex-col gap-4 overflow-hidden rounded-none border p-3 transition-all sm:flex-row sm:gap-6 sm:p-5",
             isSelected
-              ? "border-primary bg-primary/[0.07] shadow-[0_0_40px_-10px_rgba(var(--primary),0.3)] ring-1 ring-primary/40"
+              ? "border-primary bg-primary/[0.07] shadow-xl ring-1 shadow-primary/30 ring-primary/40"
               : "border-white/5 hover:border-primary/40 hover:bg-white/5"
           )}
         >
           {/* Cover Image */}
           <div
             className="h-48 w-full shrink-0 cursor-pointer overflow-hidden rounded-none shadow-2xl ring-1 ring-white/10 sm:h-44 sm:w-32"
-            onClick={() =>
-              media.siteUrl && window.open(media.siteUrl, "_blank")
-            }
+            onClick={() => onViewDetails(media)}
           >
             <img
               src={media.coverImage?.large}
@@ -119,7 +130,7 @@ export const MediaCard = memo<MediaCardProps>(
           {/* Content Container */}
           <div className="flex min-w-0 flex-1 flex-col justify-between py-1">
             <div className="space-y-3">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start justify-between gap-2 sm:gap-4">
                 <div className="min-w-0 flex-1">
                   {relationType && (
                     <Badge
@@ -130,16 +141,16 @@ export const MediaCard = memo<MediaCardProps>(
                     </Badge>
                   )}
                   <h4
-                    className="group line-clamp-2 cursor-pointer text-lg leading-tight font-black tracking-tight transition-colors hover:text-primary sm:text-xl"
+                    className="group line-clamp-2 cursor-pointer text-lg leading-tight font-black tracking-tight wrap-break-word transition-colors hover:text-primary md:text-xl"
                     onClick={() =>
                       media.siteUrl && window.open(media.siteUrl, "_blank")
                     }
                   >
                     {primaryTitle}
-                    <ExternalLink className="ml-2 inline-block h-3 w-3 shrink-0 opacity-0 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100 sm:h-3.5 sm:w-3.5" />
+                    <AniListIcon className="ml-2 inline-block h-3.5 w-3.5 shrink-0 opacity-40 transition-all duration-300 group-hover:scale-110 group-hover:opacity-100 sm:h-3.5 sm:w-3.5" />
                   </h4>
                   {secondaryTitle && (
-                    <p className="mt-0.5 line-clamp-1 text-[9px] font-bold tracking-widest text-muted-foreground uppercase opacity-70">
+                    <p className="mt-0.5 line-clamp-1 text-[9px] font-bold tracking-widest wrap-break-word text-muted-foreground uppercase opacity-70">
                       {secondaryTitle}
                     </p>
                   )}
@@ -149,7 +160,16 @@ export const MediaCard = memo<MediaCardProps>(
                     {media.studios?.nodes?.find(
                       (n: any) => n.isAnimationStudio
                     ) && (
-                      <span className="flex items-center gap-1 text-primary/70">
+                      <span
+                        className="flex cursor-pointer items-center gap-1 text-primary/70 transition-colors hover:text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const s = media.studios.nodes.find(
+                            (n: any) => n.isAnimationStudio
+                          )
+                          if (s && onStudioClick) onStudioClick(s.name)
+                        }}
+                      >
                         <Building2 className="h-2.5 w-2.5" />
                         {
                           media.studios.nodes.find(
@@ -205,7 +225,7 @@ export const MediaCard = memo<MediaCardProps>(
                   </Badge>
                 )}
               </div>
-              <p className="hidden truncate text-[11px] leading-snug text-muted-foreground/80 sm:block">
+              <p className="line-clamp-2 text-[10px] leading-snug text-muted-foreground/60 sm:line-clamp-3 sm:text-[11px] sm:text-muted-foreground/80">
                 {stripHtml(media.description || "")}
               </p>
             </div>
@@ -235,9 +255,9 @@ export const MediaCard = memo<MediaCardProps>(
 
               {/* Tracking Controls Box (Only visible when selected or showEditButton is true) */}
               {(isSelected || showEditButton) && onUpdateRating && (
-                <div className="flex animate-in flex-wrap items-stretch gap-1.5 rounded-none border border-primary/10 bg-primary/5 p-1.5 duration-300 fade-in slide-in-from-top-2 md:p-2 xl:gap-2">
+                <div className="flex animate-in flex-col items-stretch gap-1.5 rounded-none border border-primary/10 bg-primary/5 p-1 duration-300 fade-in slide-in-from-top-2 md:flex-row md:items-center md:p-2 xl:gap-2">
                   {/* Status Dropdown */}
-                  <div className="min-w-[140px] flex-1">
+                  <div className="w-full sm:flex-1">
                     <Select
                       value={status}
                       onValueChange={(val: AniListStatus) =>
@@ -266,19 +286,13 @@ export const MediaCard = memo<MediaCardProps>(
                     </Select>
                   </div>
 
-                  {/* Wrapper for Progress and Score */}
-                  <div
-                    className={cn(
-                      "flex min-w-0 flex-1 flex-wrap gap-1.5 xl:gap-2",
-                      showProgress ? "basis-[300px]" : "basis-[140px]"
-                    )}
-                  >
-                    {/* Progress Input */}
-                    {showProgress && (
-                      <div className="flex h-10 min-w-[140px] flex-1 items-center justify-between gap-1.5 rounded-none border border-primary/20 bg-background/50 px-2 sm:px-3">
+                  {/* Progress Input */}
+                  {showProgress && (
+                    <div className="w-full sm:flex-1">
+                      <div className="flex h-10 min-w-0 items-center justify-between gap-1.5 rounded-none border border-primary/20 bg-background/50 px-2 sm:px-3">
                         <div className="flex min-w-0 items-center gap-1">
                           <Hash className="h-3 w-3 shrink-0 text-primary opacity-50 sm:h-3.5 sm:w-3.5" />
-                          <span className="truncate text-[9px] font-black tracking-tighter text-primary uppercase sm:text-[10px]">
+                          <span className="inline truncate text-[9px] font-black tracking-tighter text-primary uppercase sm:text-[10px] md:hidden lg:inline">
                             Ep
                           </span>
                         </div>
@@ -297,12 +311,14 @@ export const MediaCard = memo<MediaCardProps>(
                           )}
                         </div>
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    {/* Score Input */}
+                  {/* Score Input */}
+                  <div className="w-full sm:flex-1">
                     <div
                       className={cn(
-                        "flex h-10 min-w-[140px] flex-1 items-center justify-between gap-1.5 rounded-none border px-2 transition-all sm:px-3",
+                        "flex h-10 min-w-0 items-center justify-between gap-1.5 rounded-none border px-2 transition-all sm:px-3",
                         rating === 0
                           ? "animate-pulse border-destructive/40 bg-destructive/10"
                           : "border-primary/20 bg-background/50"
@@ -319,11 +335,11 @@ export const MediaCard = memo<MediaCardProps>(
                         />
                         <span
                           className={cn(
-                            "truncate text-[9px] font-black tracking-tighter uppercase sm:text-[10px]",
+                            "inline truncate text-[9px] font-black tracking-tighter uppercase sm:text-[10px] md:hidden lg:inline",
                             rating === 0 ? "text-destructive" : "text-primary"
                           )}
                         >
-                          {rating === 0 ? "Score" : "Score"}
+                          Score
                         </span>
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
@@ -354,10 +370,10 @@ export const MediaCard = memo<MediaCardProps>(
                         <Button
                           variant={isExpanded ? "default" : "outline"}
                           size="icon"
-                          className="h-9 w-9 shrink-0 rounded-none transition-all"
+                          className="h-10 w-10 shrink-0 rounded-none transition-all"
                           onClick={() => onToggleExpand?.(media.id)}
                         >
-                          <SquareLibrary className="h-4 w-4" />
+                          <SquareLibrary className="h-5 w-5" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -372,7 +388,7 @@ export const MediaCard = memo<MediaCardProps>(
                     <Button
                       variant="default"
                       size="sm"
-                      className="h-9 rounded-none px-4 font-black tracking-widest uppercase"
+                      className="h-10 rounded-none px-4 font-black tracking-widest uppercase"
                       onClick={() => onAdd(media)}
                     >
                       <Plus className="mr-2 h-4 w-4" /> Add to List
@@ -384,10 +400,10 @@ export const MediaCard = memo<MediaCardProps>(
                       <Button
                         variant="outline"
                         size="icon"
-                        className="h-9 w-9 shrink-0 rounded-none"
+                        className="h-10 w-10 shrink-0 rounded-none"
                         onClick={() => onViewDetails(media)}
                       >
-                        <Info className="h-4 w-4" />
+                        <Info className="h-5 w-5" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>View Full Details</TooltipContent>
@@ -400,7 +416,7 @@ export const MediaCard = memo<MediaCardProps>(
 
         {/* Expanded Relations */}
         {isExpanded && media.relations?.edges?.length > 0 && (
-          <div className="ml-0 animate-in border-l-2 border-primary/10 pl-3 duration-500 slide-in-from-top-4 sm:ml-8 sm:pl-8">
+          <div className="ml-0 animate-in border-l-2 border-primary/10 pl-3 duration-500 slide-in-from-top-4 md:ml-8 md:pl-8">
             <div className="mb-4 flex items-center gap-4">
               <span className="text-[10px] font-black tracking-[0.3em] text-muted-foreground uppercase opacity-50">
                 Related Shows

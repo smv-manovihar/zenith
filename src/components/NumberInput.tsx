@@ -176,15 +176,15 @@ export const NumberInput: FC<NumberInputProps> = ({
   }
 
   return (
-    <div className={`flex items-center gap-1 ${className}`}>
+    <div className={`flex items-center gap-1.5 ${className}`}>
       <Button
         variant="ghost"
         size="icon"
-        className="h-6 w-6 rounded-none transition-colors hover:bg-primary/20 hover:text-primary"
+        className="h-8 w-8 shrink-0 rounded-none transition-colors hover:bg-primary/20 hover:text-primary"
         onClick={handleDecrement}
         disabled={disabled || value <= min}
       >
-        <Minus className="h-3 w-3" />
+        <Minus className="h-3.5 w-3.5" />
       </Button>
 
       <input
@@ -198,17 +198,17 @@ export const NumberInput: FC<NumberInputProps> = ({
         onFocus={handleFocus}
         onClick={(e) => e.stopPropagation()}
         disabled={disabled}
-        className="w-8 [appearance:textfield] border-none bg-transparent p-0 text-center text-sm font-black focus:ring-0 disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className="w-8 shrink-0 [appearance:textfield] border-none bg-transparent p-0 text-center text-sm font-black focus:ring-0 disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
 
       <Button
         variant="ghost"
         size="icon"
-        className="h-6 w-6 rounded-none transition-colors hover:bg-primary/20 hover:text-primary"
+        className="h-8 w-8 shrink-0 rounded-none transition-colors hover:bg-primary/20 hover:text-primary"
         onClick={handleIncrement}
         disabled={disabled || value >= max}
       >
-        <Plus className="h-3 w-3" />
+        <Plus className="h-3.5 w-3.5" />
       </Button>
     </div>
   )

@@ -3,12 +3,13 @@ import {
   useMemo,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   memo,
   type FC,
 } from "react"
 import { useWindowVirtualizer } from "@tanstack/react-virtual"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { useProgress } from "@/components/ProgressProvider"
 import {
   queryAniList,
@@ -18,6 +19,11 @@ import {
   UPDATE_USER_SETTINGS,
 } from "@/lib/anilist"
 import { Button } from "@/components/ui/button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { Input } from "@/components/ui/input"
 import {
   Search,
@@ -32,6 +38,8 @@ import {
   ChevronDown,
   MoreVertical,
   FilterX,
+  X,
+  Building2,
 } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -137,6 +145,14 @@ const SORTS = [
   { value: "TITLE_ROMAJI", label: "Title (A-Z)" },
 ]
 
+const LIST_STATUS_COLORS: Record<string, string> = {
+  CURRENT: "bg-sky-500/10 text-sky-500 border-sky-500/20",
+  COMPLETED: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  PLANNING: "bg-violet-500/10 text-violet-500 border-violet-500/20",
+  PAUSED: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+  DROPPED: "bg-rose-500/10 text-rose-500 border-rose-500/20",
+  REPEATING: "bg-fuchsia-500/10 text-fuchsia-500 border-fuchsia-500/20",
+}
 
 // ── Entry Row ─────────────────────────────────────────────────────────────
 interface EntryRowProps {
@@ -145,6 +161,7 @@ interface EntryRowProps {
   onEdit: (e: ListEntry) => void
   onDelete: (e: ListEntry) => void
   onInfo: (e: ListEntry) => void
+  onStudioClick: (studioName: string) => void
   deleting: boolean
 }
 
@@ -154,6 +171,7 @@ const EntryRow: FC<EntryRowProps> = ({
   onEdit,
   onDelete,
   onInfo,
+  onStudioClick,
   deleting,
 }) => {
   const title = entry.media.title.english ?? entry.media.title.romaji
@@ -178,26 +196,42 @@ const EntryRow: FC<EntryRowProps> = ({
 
         {/* Info */}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[12px] leading-tight font-bold text-foreground transition-colors group-hover:text-primary">
+          <p className="truncate text-[13px] leading-tight font-black text-foreground transition-colors group-hover:text-primary">
             {title}
           </p>
-          <div className="mt-0.5 flex flex-wrap items-center gap-2">
-            <span className="text-[10px] font-bold text-primary">
-              {formatScoreDisplay(entry.score, scoreFormat)}
-            </span>
-            <span className="rounded-none bg-primary/10 px-1 py-0 text-[9px] font-black tracking-widest text-primary uppercase">
+          {studio && (
+            <p
+              className="mt-0.5 inline-block cursor-pointer text-[10px] font-bold text-muted-foreground/70 transition-colors hover:text-primary"
+              onClick={(e) => {
+                e.stopPropagation()
+                onStudioClick(studio.name)
+              }}
+            >
+              {studio.name}
+            </p>
+          )}
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+            <span
+              className={cn(
+                "border px-1.5 py-0 text-[9px] font-black tracking-widest uppercase transition-all",
+                LIST_STATUS_COLORS[entry.status] ||
+                  "border-primary/20 bg-primary/10 text-primary"
+              )}
+            >
               {STATUS_LABELS[entry.status] || entry.status}
             </span>
-            {entry.media.episodes && (
-              <span className="text-[10px] text-muted-foreground">
-                {entry.progress}/{entry.media.episodes} eps
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-black text-foreground">
+                {formatScoreDisplay(entry.score, scoreFormat)}
               </span>
-            )}
-            {studio && (
-              <span className="hidden text-[10px] text-muted-foreground/60 sm:inline">
-                {studio.name}
-              </span>
-            )}
+              <span className="text-[10px] text-muted-foreground/30">|</span>
+              {entry.media.episodes && (
+                <span className="text-[10px] font-bold text-muted-foreground/70">
+                  {entry.progress} / {entry.media.episodes} eps
+                </span>
+              )}
+            </div>
           </div>
           {/* Genres — desktop only */}
           {entry.media.genres && entry.media.genres.length > 0 && (
@@ -220,42 +254,58 @@ const EntryRow: FC<EntryRowProps> = ({
         {/* Desktop View */}
         <div className="hidden items-center gap-1 sm:flex">
           {entry.media.siteUrl && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 rounded-none border border-border text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
-              asChild
-            >
-              <a
-                href={entry.media.siteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-none border border-border text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                  asChild
+                >
+                  <a
+                    href={entry.media.siteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">View on AniList</TooltipContent>
+            </Tooltip>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onEdit(entry)}
-            className="h-7 w-7 rounded-none border border-border text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
-          >
-            <Edit2 className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onDelete(entry)}
-            disabled={deleting}
-            className="h-7 w-7 rounded-none border border-destructive/20 text-destructive/50 transition-colors hover:border-destructive/50 hover:text-destructive disabled:opacity-30"
-          >
-            {deleting ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Trash2 className="h-3.5 w-3.5" />
-            )}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onEdit(entry)}
+                className="h-7 w-7 rounded-none border border-border text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
+              >
+                <Edit2 className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Edit Entry</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onDelete(entry)}
+                disabled={deleting}
+                className="h-7 w-7 rounded-none border border-destructive/20 text-destructive/50 transition-colors hover:border-destructive/50 hover:text-destructive disabled:opacity-30"
+              >
+                {deleting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Remove Entry</TooltipContent>
+          </Tooltip>
         </div>
 
         {/* Mobile View */}
@@ -320,7 +370,8 @@ const MemoizedEntryRow = memo(EntryRow, (prev, next) => {
     prev.scoreFormat === next.scoreFormat &&
     prev.entry.score === next.entry.score &&
     prev.entry.progress === next.entry.progress &&
-    prev.entry.status === next.entry.status
+    prev.entry.status === next.entry.status &&
+    prev.onStudioClick === next.onStudioClick
   )
 })
 
@@ -328,6 +379,9 @@ const MemoizedEntryRow = memo(EntryRow, (prev, next) => {
 const ListManagement: FC = () => {
   const { token, user } = useProgress()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialTab = searchParams.get("status") || "CURRENT"
+
   const serverScoreFormat =
     (user?.scoreFormat as AniListScoreFormat) ?? "POINT_10_DECIMAL"
   const [localScoreFormat, setLocalScoreFormat] =
@@ -335,14 +389,14 @@ const ListManagement: FC = () => {
 
   const [lists, setLists] = useState<ListGroup[]>([])
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<string>("CURRENT")
+  const [activeTab, setActiveTab] = useState<string>(initialTab)
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
   const [editEntry, setEditEntry] = useState<ListEntry | null>(null)
   const [infoEntry, setInfoEntry] = useState<ListEntry | null>(null)
   const [deletingId, setDeletingId] = useState<number | null>(null)
-  const [deleteConfirmEntry, setDeleteConfirmEntry] = useState<ListEntry | null>(
-    null
-  )
+  const [deleteConfirmEntry, setDeleteConfirmEntry] =
+    useState<ListEntry | null>(null)
   const [fetched, setFetched] = useState(false)
   const [isUpdatingFormat, setIsUpdatingFormat] = useState(false)
   const { setUser } = useProgress()
@@ -350,6 +404,7 @@ const ListManagement: FC = () => {
   const [season, setSeason] = useState<string>("ALL")
   const [seasonYear, setSeasonYear] = useState<string>("ALL")
   const [format, setFormat] = useState<string>("ALL")
+  const [studio, setStudio] = useState<string>("ALL")
   const [sort, setSort] = useState<string>("UPDATED_AT_DESC")
 
   const years = useMemo(() => {
@@ -361,14 +416,24 @@ const ListManagement: FC = () => {
     setSeason("ALL")
     setSeasonYear("ALL")
     setFormat("ALL")
+    setStudio("ALL")
     setSort("UPDATED_AT_DESC")
     setSearch("")
+    setDebouncedSearch("")
   }
 
   // Sync local format when server format changes
   useEffect(() => {
     setLocalScoreFormat(serverScoreFormat)
   }, [serverScoreFormat])
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [search])
 
   if (!token) {
     navigate("/")
@@ -408,24 +473,16 @@ const ListManagement: FC = () => {
     if (!user || !user.id) return
     setLoading(true)
     try {
-      const userId = user.id
-
       const res = await queryAniList(
         GET_MEDIA_LIST_COLLECTION,
-        { userId, type: "ANIME" },
+        {
+          userId: user.id,
+          type: "ANIME",
+        },
         token
       )
       const rawLists: ListGroup[] = res.data?.MediaListCollection?.lists ?? []
-      // Sort groups by STATUS_TABS order
-      const tabOrder = STATUS_TABS.map((t) => t.key).filter(
-        (k) => k !== "ALL"
-      ) as string[]
-      const sorted = [...rawLists].sort(
-        (a, b) =>
-          (tabOrder.indexOf(a.status) ?? 99) -
-          (tabOrder.indexOf(b.status) ?? 99)
-      )
-      setLists(sorted)
+      setLists(rawLists)
       setFetched(true)
     } catch (err: any) {
       toast.error("Failed to load your list: " + err.message)
@@ -434,7 +491,6 @@ const ListManagement: FC = () => {
     }
   }, [token, user])
 
-  // Auto-fetch on mount
   useEffect(() => {
     fetchList()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -450,9 +506,9 @@ const ListManagement: FC = () => {
   const filteredEntries = useMemo(() => {
     let result = activeGroupEntries
 
-    // 1. Filter by search
-    if (search.trim()) {
-      const q = search.toLowerCase()
+    // 1. Filter by search (debounced)
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase()
       result = result.filter(
         (e) =>
           (e.media.title.english ?? "").toLowerCase().includes(q) ||
@@ -476,7 +532,16 @@ const ListManagement: FC = () => {
       result = result.filter((e) => e.media.format === format)
     }
 
-    // 5. Sorting
+    // 5. Filter by Studio
+    if (studio !== "ALL") {
+      result = result.filter((e) =>
+        e.media.studios?.nodes?.some(
+          (s) => s.name === studio && s.isAnimationStudio
+        )
+      )
+    }
+
+    // 6. Sorting
     return [...result].sort((a, b) => {
       switch (sort) {
         case "UPDATED_AT_DESC":
@@ -521,34 +586,38 @@ const ListManagement: FC = () => {
           return 0
       }
     })
-  }, [activeGroupEntries, search, season, seasonYear, format, sort])
+  }, [
+    activeGroupEntries,
+    debouncedSearch,
+    season,
+    seasonYear,
+    format,
+    studio,
+    sort,
+  ])
 
   // --- Window Virtualization Setup ---
   const listRef = useRef<HTMLDivElement>(null)
 
   // We need to know how far down the page the list starts
-  const [listOffset, setListOffset] = useState(0)
+  const [scrollMargin, setScrollMargin] = useState(0)
 
   // Measure the offset once the component mounts or the layout changes
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (listRef.current) {
-      setListOffset(listRef.current.offsetTop)
+      setScrollMargin(listRef.current.offsetTop)
     }
-  }, [
-    filteredEntries.length,
-    activeTab,
-    season,
-    seasonYear,
-    format,
-    sort,
-    fetched,
-  ])
+  }, [fetched, studio])
 
   const rowVirtualizer = useWindowVirtualizer({
     count: filteredEntries.length,
-    estimateSize: () => 81, // Approximate height of your EntryRow
-    overscan: 5,
-    scrollMargin: listOffset, // Tells the virtualizer about the header above the list
+    estimateSize: () => 81,
+    overscan: 12,
+    scrollMargin,
+    measureElement:
+      typeof window !== "undefined"
+        ? (el) => el.getBoundingClientRect().height
+        : undefined,
   })
 
   const handleSave = async (
@@ -695,7 +764,7 @@ const ListManagement: FC = () => {
             variant="outline"
             size="sm"
             className="w-full gap-2 rounded-none sm:w-auto"
-            onClick={fetchList}
+            onClick={() => fetchList()}
             disabled={loading}
           >
             <RefreshCcw className={cn("h-4 w-4", loading && "animate-spin")} />
@@ -726,6 +795,7 @@ const ListManagement: FC = () => {
                   key={tab.key}
                   onClick={() => {
                     setActiveTab(tab.key)
+                    setSearchParams({ status: tab.key })
                     setSearch("")
                   }}
                   className={cn(
@@ -754,8 +824,8 @@ const ListManagement: FC = () => {
           </div>
 
           {/* Filters & Search */}
-          <div className="flex flex-col gap-3 rounded-none border border-border/50 bg-muted/20 p-3 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
+          <div className="flex flex-col gap-3 rounded-none border border-border/50 bg-muted/20 p-3">
+            <div className="relative">
               <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/50" />
               <Input
                 placeholder={`Search ${STATUS_LABELS[activeTab] ?? ""} entries…`}
@@ -767,13 +837,22 @@ const ListManagement: FC = () => {
 
             <div className="flex flex-wrap items-center gap-2">
               <Select value={season} onValueChange={setSeason}>
-                <SelectTrigger className="h-9 w-[110px] rounded-none text-[10px] font-bold uppercase tracking-wider">
+                <SelectTrigger className="h-9 w-[110px] rounded-none text-[10px] font-bold tracking-wider uppercase">
                   <SelectValue placeholder="Season" />
                 </SelectTrigger>
                 <SelectContent className="rounded-none">
-                  <SelectItem value="ALL" className="text-[10px] font-bold uppercase">All Seasons</SelectItem>
+                  <SelectItem
+                    value="ALL"
+                    className="text-[10px] font-bold uppercase"
+                  >
+                    All Seasons
+                  </SelectItem>
                   {SEASONS.map((s) => (
-                    <SelectItem key={s} value={s} className="text-[10px] font-bold uppercase">
+                    <SelectItem
+                      key={s}
+                      value={s}
+                      className="text-[10px] font-bold uppercase"
+                    >
                       {s.charAt(0) + s.slice(1).toLowerCase()}
                     </SelectItem>
                   ))}
@@ -781,13 +860,22 @@ const ListManagement: FC = () => {
               </Select>
 
               <Select value={seasonYear} onValueChange={setSeasonYear}>
-                <SelectTrigger className="h-9 w-[90px] rounded-none text-[10px] font-bold uppercase tracking-wider">
+                <SelectTrigger className="h-9 w-[90px] rounded-none text-[10px] font-bold tracking-wider uppercase">
                   <SelectValue placeholder="Year" />
                 </SelectTrigger>
                 <SelectContent className="rounded-none">
-                  <SelectItem value="ALL" className="text-[10px] font-bold uppercase">All Years</SelectItem>
+                  <SelectItem
+                    value="ALL"
+                    className="text-[10px] font-bold uppercase"
+                  >
+                    All Years
+                  </SelectItem>
                   {years.map((y) => (
-                    <SelectItem key={y} value={y} className="text-[10px] font-bold uppercase">
+                    <SelectItem
+                      key={y}
+                      value={y}
+                      className="text-[10px] font-bold uppercase"
+                    >
                       {y}
                     </SelectItem>
                   ))}
@@ -795,13 +883,22 @@ const ListManagement: FC = () => {
               </Select>
 
               <Select value={format} onValueChange={setFormat}>
-                <SelectTrigger className="h-9 w-auto min-w-[100px] rounded-none text-[10px] font-bold uppercase tracking-wider">
+                <SelectTrigger className="h-9 w-auto min-w-[100px] rounded-none text-[10px] font-bold tracking-wider uppercase">
                   <SelectValue placeholder="Format" />
                 </SelectTrigger>
                 <SelectContent className="rounded-none">
-                  <SelectItem value="ALL" className="text-[10px] font-bold uppercase">All Formats</SelectItem>
+                  <SelectItem
+                    value="ALL"
+                    className="text-[10px] font-bold uppercase"
+                  >
+                    All Formats
+                  </SelectItem>
                   {FORMATS.map((f) => (
-                    <SelectItem key={f} value={f} className="text-[10px] font-bold uppercase">
+                    <SelectItem
+                      key={f}
+                      value={f}
+                      className="text-[10px] font-bold uppercase"
+                    >
                       {f.replace("_", " ")}
                     </SelectItem>
                   ))}
@@ -809,12 +906,16 @@ const ListManagement: FC = () => {
               </Select>
 
               <Select value={sort} onValueChange={setSort}>
-                <SelectTrigger className="h-9 w-[160px] rounded-none text-[10px] font-bold uppercase tracking-wider">
+                <SelectTrigger className="h-9 w-[160px] rounded-none text-[10px] font-bold tracking-wider uppercase">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
                 <SelectContent className="rounded-none">
                   {SORTS.map((s) => (
-                    <SelectItem key={s.value} value={s.value} className="text-[10px] font-bold uppercase">
+                    <SelectItem
+                      key={s.value}
+                      value={s.value}
+                      className="text-[10px] font-bold uppercase"
+                    >
                       {s.label}
                     </SelectItem>
                   ))}
@@ -831,6 +932,27 @@ const ListManagement: FC = () => {
                 <FilterX className="h-4 w-4" />
               </Button>
             </div>
+
+            {/* Active Filters Display */}
+            {studio !== "ALL" && (
+              <div className="flex animate-in items-center gap-2 border-x border-b border-border/50 bg-primary/5 px-3 py-2 duration-300 fade-in slide-in-from-top-1">
+                <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-60">
+                  Studio:
+                </span>
+                <div className="flex items-center gap-1.5 rounded-none border border-primary/30 bg-background px-2 py-1 shadow-xs">
+                  <Building2 className="h-3 w-3 text-primary" />
+                  <span className="text-[11px] font-black text-primary uppercase">
+                    {studio}
+                  </span>
+                  <button
+                    onClick={() => setStudio("ALL")}
+                    className="ml-1 rounded-full p-0.5 transition-colors hover:bg-muted"
+                  >
+                    <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Entries Container */}
@@ -838,13 +960,23 @@ const ListManagement: FC = () => {
             ref={listRef}
             className="w-full flex-1 border-t border-border/50"
           >
-            {filteredEntries.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-16 text-center text-muted-foreground">
-                <AlertCircle className="h-8 w-8 opacity-30" />
-                <p className="text-sm font-bold">
+            {loading && filteredEntries.length === 0 ? (
+              <div className="flex min-h-[400px] flex-col items-center justify-center py-20 text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary/40" />
+                <p className="mt-4 text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-40">
+                  Fetching entries...
+                </p>
+              </div>
+            ) : filteredEntries.length === 0 ? (
+              <div className="flex min-h-[400px] flex-col items-center justify-center py-20 text-center text-muted-foreground">
+                <AlertCircle className="h-10 w-10 opacity-20" />
+                <p className="mt-4 text-sm font-bold">
                   {search
                     ? "No entries match your search."
                     : `No entries in ${activeTab === "ALL" ? "your list" : STATUS_LABELS[activeTab]}.`}
+                </p>
+                <p className="mt-1 text-[10px] font-bold tracking-widest uppercase opacity-40">
+                  Try adjusting your filters or search query
                 </p>
               </div>
             ) : (
@@ -860,13 +992,18 @@ const ListManagement: FC = () => {
                   return (
                     <div
                       key={virtualItem.key}
+                      data-index={virtualItem.index}
+                      ref={rowVirtualizer.measureElement}
                       style={{
                         position: "absolute",
                         top: 0,
                         left: 0,
                         width: "100%",
-                        height: `${virtualItem.size}px`,
-                        transform: `translateY(${virtualItem.start - listOffset}px)`,
+                        transform: `translateY(${
+                          virtualItem.start -
+                          rowVirtualizer.options.scrollMargin
+                        }px)`,
+                        willChange: "transform",
                       }}
                     >
                       <MemoizedEntryRow
@@ -875,6 +1012,7 @@ const ListManagement: FC = () => {
                         onEdit={setEditEntry}
                         onDelete={setDeleteConfirmEntry}
                         onInfo={setInfoEntry}
+                        onStudioClick={setStudio}
                         deleting={deletingId === entry.id}
                       />
                     </div>
@@ -931,7 +1069,7 @@ const ListManagement: FC = () => {
               onClick={() =>
                 deleteConfirmEntry && handleDelete(deleteConfirmEntry)
               }
-              className="h-9 rounded-none bg-destructive text-[10px] font-black tracking-widest text-destructive-foreground uppercase shadow-lg shadow-destructive/20 transition-all hover:bg-destructive/90 hover:scale-[1.02]"
+              className="text-destructive-foreground h-9 rounded-none bg-destructive text-[10px] font-black tracking-widest uppercase shadow-lg shadow-destructive/20 transition-all hover:scale-[1.02] hover:bg-destructive/90"
             >
               Remove Entry
             </AlertDialogAction>

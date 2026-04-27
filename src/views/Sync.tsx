@@ -24,8 +24,7 @@ import {
   Square,
   ArrowLeft,
   Download,
-  Zap,
-  ExternalLink as ExternalLinkIcon,
+  ExternalLink,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
@@ -206,6 +205,17 @@ const SyncRowComponent = ({
     </div>
   )
 }
+
+const MyAnimeListLogo = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+  >
+    <path d="M8.273 7.247v8.423l-2.103-.003v-5.216l-2.03 2.404l-1.989-2.458l-.02 5.285H.001L0 7.247h2.203l1.865 2.545l2.015-2.546l2.19.001zm8.628 2.069l.025 6.335h-2.365l-.008-2.871h-2.8c.07.499.21 1.266.417 1.779c.155.381.298.751.583 1.128l-1.705 1.125c-.349-.636-.622-1.337-.878-2.082a9.296 9.296 0 0 1-.507-2.179c-.085-.75-.097-1.471.107-2.212a3.908 3.908 0 0 1 1.161-1.866c.313-.293.749-.5 1.1-.687c.351-.187.743-.264 1.107-.359a7.405 7.405 0 0 1 1.191-.183c.398-.034 1.107-.066 2.39-.028l.545 1.749H14.51c-.593.008-.878.001-1.341.209a2.236 2.236 0 0 0-1.278 1.92l2.663.033l.038-1.81h2.309zm3.992-2.099v6.627l3.107.032l-.43 1.775h-4.807V7.187l2.13.03z" />
+  </svg>
+)
 
 const Sync: FC = () => {
   const { entries, updateEntry, updateSelection, token, user } = useProgress()
@@ -496,9 +506,9 @@ const Sync: FC = () => {
         </Button>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Left Column: Sync List (Primary) */}
-        <div className="order-2 space-y-6 md:order-1 md:col-span-2">
+        <div className="order-2 space-y-6 lg:order-1 lg:col-span-2">
           {/* Progress Overview (Moved here) */}
           <Card className="rounded-none border-primary/20 bg-card/40 backdrop-blur-md">
             <CardHeader className="p-4 pb-2">
@@ -559,7 +569,7 @@ const Sync: FC = () => {
         </div>
 
         {/* Right Column: Actions, Progress, and Settings */}
-        <div className="order-1 space-y-6 md:order-2">
+        <div className="order-1 space-y-6 lg:order-2">
           {/* Primary Action Card */}
           <Card className="rounded-none border-primary/20 bg-primary/5 shadow-2xl shadow-primary/5">
             <CardContent className="flex flex-col gap-4 p-4 sm:p-6">
@@ -610,7 +620,7 @@ const Sync: FC = () => {
           <Card className="rounded-none border-primary/10 bg-muted/20 opacity-90 transition-opacity hover:opacity-100">
             <CardContent className="flex flex-col gap-3 p-4">
               <div className="flex items-center gap-3">
-                <Zap className="h-4 w-4 text-primary" />
+                <MyAnimeListLogo className="h-4 w-4 text-primary" />
                 <div className="space-y-0.5">
                   <p className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
                     XML Export Alternative
@@ -674,7 +684,6 @@ const Sync: FC = () => {
                 </Button>
               </div>
             )}
-
           </div>
         </div>
       </div>
@@ -710,7 +719,7 @@ const Sync: FC = () => {
                 rel="noopener noreferrer"
               >
                 AniList Import Page
-                <ExternalLinkIcon className="h-4 w-4" />
+                <ExternalLink className="h-4 w-4" />
               </a>
             </AlertDialogAction>
           </AlertDialogFooter>

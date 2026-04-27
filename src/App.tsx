@@ -29,7 +29,7 @@ function App() {
       <Router>
         <div className="min-h-screen overflow-x-hidden bg-background text-foreground selection:bg-primary/30">
           <Navbar />
-          <main className="container mx-auto px-4 pt-32 pb-12 md:pt-24">
+          <main className="container mx-auto px-2.5 pt-32 pb-12 sm:px-4 lg:pt-24">
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
                 <Route path="/" element={<Home />} />

@@ -172,6 +172,17 @@ const Review: FC = () => {
           entriesWithMissingScores={entriesWithMissingScores}
           isFilterActive={showMissingOnly}
           onToggleMissingFilter={() => setShowMissingOnly(!showMissingOnly)}
+          // Sidebar props for mobile trigger
+          entries={filteredEntries.map((fe) => ({
+            ...fe.entry,
+            originalIndex: fe.index,
+          }))}
+          currentIndex={currentIndex}
+          onSelectEntry={setCurrentIndex}
+          onUpdateRating={updateRating}
+          searchQuery={sidebarSearchQuery}
+          onSearchChange={setSidebarSearchQuery}
+          onClearFilters={handleClearFilters}
         />
 
         <div className="grid items-start gap-10 lg:grid-cols-12">

@@ -27,7 +27,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { SCORE_FORMAT_OPTIONS } from "@/lib/scoreFormat"
 
 export const Navbar: React.FC = () => {
   const { token, setToken, user } = useProgress()
@@ -51,10 +50,6 @@ export const Navbar: React.FC = () => {
     { name: "Sync", path: "/sync" },
   ]
 
-  const scoreFormatLabel =
-    SCORE_FORMAT_OPTIONS.find((o) => o.value === user?.scoreFormat)?.label ??
-    user?.scoreFormat
-
   const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false)
 
   if (!token && location.pathname !== "/") return null
@@ -71,14 +66,14 @@ export const Navbar: React.FC = () => {
         <div className="flex h-16 items-center justify-between gap-8">
           <Link
             to="/"
-            className="flex shrink-0 items-center gap-2 text-xl font-black tracking-widest text-primary uppercase md:text-2xl"
+            className="flex shrink-0 items-center gap-2 text-xl font-black tracking-widest text-primary uppercase lg:text-2xl"
           >
             Zenith
           </Link>
 
           {/* Desktop Navigation Steps */}
           {token && (
-            <div className="hidden flex-1 items-center justify-center gap-6 md:flex">
+            <div className="hidden flex-1 items-center justify-center gap-6 lg:flex">
               {steps.map((step, index) => {
                 const isActive = location.pathname === step.path
                 const isPast =
@@ -142,12 +137,65 @@ export const Navbar: React.FC = () => {
                 )}
               >
                 <Search className="h-3.5 w-3.5" />
-                Search
+                Explore
               </Link>
             </div>
           )}
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            {/* Mobile-only Explore and List Icons - Now active up to LG */}
+            {token && (
+              <div className="flex items-center gap-1 lg:hidden">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "h-9 gap-2 rounded-none px-2 sm:px-3",
+                        location.pathname === "/list"
+                          ? "text-primary"
+                          : "text-muted-foreground"
+                      )}
+                      asChild
+                    >
+                      <Link to="/list">
+                        <List className="h-3.5 w-3.5" />
+                        <span className="hidden text-sm font-medium md:inline">
+                          My List
+                        </span>
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">My List</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "h-9 gap-2 rounded-none px-2 sm:px-3",
+                        location.pathname === "/search"
+                          ? "text-primary"
+                          : "text-muted-foreground"
+                      )}
+                      asChild
+                    >
+                      <Link to="/search">
+                        <Search className="h-3.5 w-3.5" />
+                        <span className="hidden text-sm font-medium md:inline">
+                          Explore
+                        </span>
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Explore</TooltipContent>
+                </Tooltip>
+              </div>
+            )}
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -186,7 +234,7 @@ export const Navbar: React.FC = () => {
                 <PopoverContent
                   align="end"
                   sideOffset={8}
-                  className="w-56 rounded-none border-border p-0"
+                  className="w-56 rounded-none border-border mt-2 p-0"
                   onClick={() => setIsUserMenuOpen(false)}
                 >
                   {/* User info */}
@@ -201,11 +249,6 @@ export const Navbar: React.FC = () => {
                       <p className="truncate text-sm font-bold">
                         {user?.name ?? "User"}
                       </p>
-                      {scoreFormatLabel && (
-                        <p className="text-[10px] text-muted-foreground">
-                          {scoreFormatLabel}
-                        </p>
-                      )}
                     </div>
                   </div>
 
@@ -261,8 +304,8 @@ export const Navbar: React.FC = () => {
 
         {/* Mobile Navigation */}
         {token && (
-          <div className="border-t border-border/40 py-2 md:hidden">
-            <div className="scrollbar-none flex w-full items-center gap-4 overflow-x-auto pb-1">
+          <div className="border-t border-border/40 py-2 lg:hidden">
+            <div className="scrollbar-none flex w-full items-center justify-center gap-4 overflow-x-auto pb-1">
               {steps.map((step, index) => {
                 const isActive = location.pathname === step.path
                 const isPast =

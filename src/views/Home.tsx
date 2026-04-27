@@ -18,6 +18,9 @@ import {
   ExternalLink,
   AlertTriangle,
   Info,
+  Search,
+  Download,
+  Zap,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { Badge } from "@/components/ui/badge"
@@ -105,7 +108,9 @@ const Home: React.FC = () => {
                   size="lg"
                   variant="secondary"
                   className="h-16 gap-3 border-2 border-primary/80 px-10 text-xl font-black"
-                  onClick={() => navigate(entries.length > 0 ? "/review" : "/import")}
+                  onClick={() =>
+                    navigate(entries.length > 0 ? "/review" : "/import")
+                  }
                 >
                   Continue
                   <ChevronRight className="h-5 w-5 opacity-30" />
@@ -266,18 +271,33 @@ VITE_ANILIST_CLIENT_ID = YOUR_CLIENT_ID
         {[
           {
             icon: <LayoutList className="h-6 w-6" />,
-            title: "Smart Import",
-            desc: "Supports raw text lists and formatted CSV files with auto-detection.",
+            title: "Simple Import",
+            desc: "Upload your anime watchlists from text files or CSVs with ease.",
           },
           {
-            icon: <Sparkles className="h-6 w-6" />,
-            title: "Related Search",
-            desc: "Intelligent matching logic handles prequels, sequels, and spin-offs.",
+            icon: <Zap className="h-6 w-6" />,
+            title: "Smart Matching",
+            desc: "Automatically link sequels and related shows to your list.",
           },
           {
             icon: <RefreshCcw className="h-6 w-6" />,
-            title: "Batch Sync",
-            desc: "One-click updates to your AniList profile for entire watchlists.",
+            title: "Batch Syncing",
+            desc: "Update your AniList profile with multiple anime entries in one go.",
+          },
+          {
+            icon: <Search className="h-6 w-6" />,
+            title: "Explore AniList",
+            desc: "Browse and filter the entire AniList database with ease.",
+          },
+          {
+            icon: <Download className="h-6 w-6" />,
+            title: "Anilist Export",
+            desc: "Save your entire library as text or MAL-compatible XML.",
+          },
+          {
+            icon: <Sparkles className="h-6 w-6" />,
+            title: "AI Formatting",
+            desc: "Let AI clean up and organize messy lists for you automatically.",
           },
         ].map((f, i) => (
           <div

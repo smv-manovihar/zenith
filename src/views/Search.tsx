@@ -9,6 +9,11 @@ import { useProgress, type AniListStatus } from "@/components/ProgressProvider"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
   Search as SearchIcon,
   AlertCircle,
   Loader2,
@@ -61,15 +66,18 @@ const Search: FC = () => {
   const [format, setFormat] = useState<string>("ALL")
   const [sort, setSort] = useState<string>("POPULARITY_DESC")
 
+  const [studioSearch, setStudioSearch] = useState("")
+  const [debouncedStudioSearch, setDebouncedStudioSearch] = useState("")
   const [infoEntry, setInfoEntry] = useState<any | null>(null)
   const [editEntry, setEditEntry] = useState<any | null>(null)
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedGlobalSearch(globalSearch)
+      setDebouncedStudioSearch(studioSearch)
     }, 500)
     return () => clearTimeout(timer)
-  }, [globalSearch])
+  }, [globalSearch, studioSearch])
 
   const years = useMemo(() => {
     const currentYear = getCurrentYear() + 1
@@ -82,6 +90,9 @@ const Search: FC = () => {
     setFormat("ALL")
     setSort("POPULARITY_DESC")
     setGlobalSearch("")
+    setStudioSearch("")
+    setDebouncedGlobalSearch("")
+    setDebouncedStudioSearch("")
   }
 
   const queryVariables = useMemo(() => {
@@ -125,10 +136,20 @@ const Search: FC = () => {
   // Actually, I'll modify the queryFn to return an object containing data and page number.
 
   const searchResults = useMemo(() => {
-    return (
+    let results =
       searchData?.pages.flatMap((page) => page.data?.Page?.media || []) || []
-    )
-  }, [searchData])
+
+    if (debouncedStudioSearch.trim()) {
+      const q = debouncedStudioSearch.toLowerCase()
+      results = results.filter((m) =>
+        m.studios?.nodes?.some(
+          (s: any) => s.name.toLowerCase().includes(q) && s.isAnimationStudio
+        )
+      )
+    }
+
+    return results
+  }, [searchData, debouncedStudioSearch])
 
   const handleUpdateStatus = async (mediaId: number, status: string) => {
     if (!token) {
@@ -232,17 +253,31 @@ const Search: FC = () => {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-none border border-border/50 bg-muted/20 p-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search anime titles..."
-            value={globalSearch}
-            onChange={(e) => setGlobalSearch(e.target.value)}
-            className="rounded-none border-primary/20 bg-background/50 pl-9 font-semibold transition-colors focus-visible:border-primary/50 focus-visible:ring-0"
-          />
+      <div className="space-y-3 rounded-none border border-border/50 bg-muted/20 p-3">
+        {/* Search Bars */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="relative">
+            <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search anime titles..."
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+              className="rounded-none border-primary/20 bg-background/50 pl-9 font-semibold transition-colors focus-visible:border-primary/50 focus-visible:ring-0"
+            />
+          </div>
+
+          <div className="relative">
+            <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
+            <Input
+              placeholder="Filter by studio name..."
+              value={studioSearch}
+              onChange={(e) => setStudioSearch(e.target.value)}
+              className="rounded-none border-primary/20 bg-background/50 pl-9 font-semibold transition-colors focus-visible:border-primary/50 focus-visible:ring-0"
+            />
+          </div>
         </div>
 
+        {/* Filters */}
         <div className="flex flex-wrap items-center gap-2">
           <Select value={season} onValueChange={setSeason}>
             <SelectTrigger className="w-[110px]">
@@ -299,15 +334,19 @@ const Search: FC = () => {
             </SelectContent>
           </Select>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleClearFilters}
-            className="rounded-none text-muted-foreground hover:text-foreground"
-            title="Clear Filters"
-          >
-            <FilterX className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleClearFilters}
+                className="rounded-none text-muted-foreground hover:text-foreground"
+              >
+                <FilterX className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Clear Filters</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
@@ -339,6 +378,7 @@ const Search: FC = () => {
                   onUpdateRating={handleUpdateRating}
                   onUpdateProgress={handleUpdateProgress}
                   onViewDetails={setInfoEntry}
+                  onStudioClick={setStudioSearch}
                   onAdd={setEditEntry}
                   isMediaSelected={() => false}
                   handleToggleSelection={() => {}}

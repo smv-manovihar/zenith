@@ -17,6 +17,12 @@ function Tooltip({
 }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
   const [isOpen, setIsOpen] = React.useState(false)
 
+  React.useEffect(() => {
+    const handleClose = () => setIsOpen(false)
+    window.addEventListener("close-all-tooltips", handleClose)
+    return () => window.removeEventListener("close-all-tooltips", handleClose)
+  }, [])
+
   return (
     <TooltipContext.Provider value={{ isOpen, setIsOpen }}>
       <TooltipPrimitive.Root
@@ -42,6 +48,9 @@ function TooltipTrigger({
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleTouchStart = (e: React.TouchEvent<HTMLButtonElement>) => {
+    // Close any other open tooltips before starting a new one
+    window.dispatchEvent(new CustomEvent("close-all-tooltips"))
+
     timerRef.current = setTimeout(() => {
       context?.setIsOpen(true)
     }, 500) // 500ms long press threshold
@@ -63,6 +72,7 @@ function TooltipTrigger({
       onTouchCancel={handleTouchEnd}
       onContextMenu={(e) => {
         e.preventDefault()
+        window.dispatchEvent(new CustomEvent("close-all-tooltips"))
         context?.setIsOpen(true)
         if (onContextMenu) onContextMenu(e)
       }}

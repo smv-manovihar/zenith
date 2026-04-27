@@ -35,6 +35,13 @@ export const MediaCardSkeleton: React.FC = () => {
             {/* Main Button Skeleton */}
             <Skeleton className="h-11 w-full bg-muted/20" />
 
+            {/* Controls Skeleton */}
+            <div className="flex flex-col items-stretch gap-1.5 md:flex-row md:p-2">
+              <Skeleton className="h-10 flex-1 bg-muted/20" />
+              <Skeleton className="h-10 flex-1 bg-muted/20" />
+              <Skeleton className="h-10 flex-1 bg-muted/20" />
+            </div>
+
             {/* Bottom Actions Skeleton */}
             <div className="mt-1 flex items-center justify-end border-t border-dashed border-border/50 pt-3">
               <div className="flex gap-2">

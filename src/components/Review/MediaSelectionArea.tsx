@@ -20,12 +20,11 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { NumberInput } from "@/components/NumberInput"
 import { queryAniList, SEARCH_ANIME_QUERY, rateLimiter } from "@/lib/anilist"
 import { Storage } from "@/lib/storage"
 import { normalizeTitle, cn } from "@/lib/utils"
-import { ReviewSidebar } from "./ReviewSidebar"
 import { MediaCardSkeleton } from "./MediaCardSkeleton"
 import { toast } from "sonner"
 import { MediaCard } from "./MediaCard"
@@ -104,7 +103,7 @@ const FilterButton: FC<FilterButtonProps> = ({
       className={cn(
         "h-10 gap-2 rounded-none border-primary/20 font-black tracking-tight uppercase transition-all duration-300",
         isActive
-          ? "bg-primary text-primary-foreground shadow-[0_0_20px_rgba(var(--primary),0.3)]"
+          ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
           : "bg-background hover:border-primary/40 hover:bg-primary/5",
         className
       )}
@@ -122,9 +121,6 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
   currentIndex,
   updateEntry,
   onViewDetails,
-  entries,
-  onSelectEntry,
-  onClearFilters,
 }) => {
   const [searchQuery, setSearchQuery] = useState("")
   const originalName = useRef("")
@@ -513,20 +509,6 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
           {/* Left: sidebar trigger + title block */}
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex min-w-0 items-center gap-2">
-              {/* Mobile sidebar trigger */}
-              <div className="shrink-0 lg:hidden">
-                <ReviewSidebar
-                  entries={entries}
-                  currentIndex={currentIndex}
-                  onSelectEntry={onSelectEntry}
-                  onUpdateRating={(idx, val) =>
-                    updateEntry(idx, { rating: val })
-                  }
-                  isMobile
-                  onClearFilters={onClearFilters}
-                />
-              </div>
-
               {isEditingSearch ? (
                 <div className="relative flex min-w-0 flex-1 items-center">
                   <Input
@@ -536,7 +518,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
                       setSearchQuery(newVal)
                       updateEntry(currentIndex, { name: newVal })
                     }}
-                    className="h-10 pr-10 text-base font-bold sm:h-11"
+                    className="h-10 pr-10 text-lg font-black tracking-tighter uppercase ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden sm:h-12"
                     autoFocus
                     onBlur={() => {
                       if (!searchQuery.trim()) {
@@ -568,7 +550,10 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
                 </div>
               ) : (
                 <div className="group flex min-w-0 flex-1 items-center gap-2">
-                  <h3 className="text-lg font-black tracking-tighter wrap-break-word uppercase underline decoration-primary/30 underline-offset-8 sm:text-2xl lg:text-3xl">
+                  <h3
+                    className="cursor-pointer text-lg font-black tracking-tighter wrap-break-word uppercase underline decoration-primary/30 underline-offset-8 transition-colors hover:text-primary"
+                    onClick={() => setIsEditingSearch(true)}
+                  >
                     {currentEntry.name}
                   </h3>
                   <Tooltip>
@@ -588,13 +573,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
               )}
             </div>
 
-            {/*
-              Typography fix:
-              - Was text-[9px] / sm:text-[10px] — below browser minimum legible size
-              - Now text-xs (12px) everywhere — minimum for mono labels
-              - tracking-widest preserved for the uppercase mono aesthetic
-            */}
-            <p className="font-mono text-xs tracking-widest break-all text-muted-foreground uppercase opacity-70">
+            <p className="font-mono text-[10px] tracking-widest break-all text-muted-foreground uppercase opacity-70 sm:text-xs">
               Source: {currentEntry.originalLine}
             </p>
           </div>
@@ -641,9 +620,9 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
         </div>
 
         {/* Row 2: Filters & Search */}
-        <div className="flex flex-col gap-4 pt-2 md:flex-row md:items-center">
+        <div className="flex flex-col gap-4 pt-2 sm:flex-row sm:items-center">
           {/* Desktop Filters (hidden on mobile) */}
-          <div className="hidden flex-1 flex-wrap items-center gap-3 md:flex">
+          <div className="hidden flex-1 flex-wrap items-center gap-3 sm:flex">
             <div className="flex flex-wrap items-center gap-2">
               {FORMATS.map((format) => {
                 const isActive =
@@ -686,9 +665,9 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
               onClick={handleSearch}
               disabled={!isFiltersDirty || isFetching}
               className={cn(
-                "h-10 gap-2 rounded-none px-6 font-black tracking-tighter uppercase transition-all",
+                "hidden h-10 gap-2 rounded-none px-6 font-black tracking-tighter uppercase transition-all sm:flex",
                 isFiltersDirty
-                  ? "bg-primary text-primary-foreground shadow-[0_0_20px_rgba(var(--primary),0.4)]"
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/40"
                   : "bg-muted text-muted-foreground opacity-50"
               )}
             >
@@ -702,7 +681,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
           </div>
 
           {/* Mobile Filters Drawer (visible only on mobile) */}
-          <div className="flex md:hidden">
+          <div className="flex sm:hidden">
             <Drawer>
               <DrawerTrigger asChild>
                 <Button
@@ -710,7 +689,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
                   className={cn(
                     "h-12 w-full justify-between gap-2 rounded-none border-primary/20 bg-background font-black tracking-tight uppercase",
                     isFiltersDirty &&
-                      "border-primary/50 bg-primary/5 shadow-[0_0_15px_rgba(var(--primary),0.1)]"
+                      "border-primary/50 bg-primary/5 shadow-md shadow-primary/10"
                   )}
                 >
                   <div className="flex items-center gap-2">
@@ -722,38 +701,36 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
                       Pending Changes
                     </Badge>
                   ) : (
-                    <div className="flex items-center gap-1.5 opacity-40">
-                      {sort !== "POPULARITY_DESC" ||
-                      selectedFormats.length > 0 ? (
-                        <>
-                          {sort !== "POPULARITY_DESC" && (
-                            <span className="text-[10px]">
-                              {SORTS.find((s) => s.value === sort)?.label}
-                            </span>
-                          )}
-                          {sort !== "POPULARITY_DESC" &&
-                            selectedFormats.length > 0 && (
-                              <div className="h-1 w-1 rounded-full bg-border" />
-                            )}
-                          {selectedFormats.length > 0 && (
-                            <span className="text-[10px]">
-                              {selectedFormats.length} Formats
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="text-[10px]">Default</span>
+                    <div className="flex items-center gap-1.5">
+                      {(sort !== "POPULARITY_DESC" ||
+                        selectedFormats.length > 0) && (
+                        <div className="flex items-center gap-1.5">
+                          <Badge
+                            variant="secondary"
+                            className="h-5 min-w-[20px] justify-center rounded-none border-primary/20 bg-primary/10 px-1 text-[10px] font-black text-primary"
+                          >
+                            {(sort !== "POPULARITY_DESC" ? 1 : 0) +
+                              selectedFormats.length}
+                          </Badge>
+                          <span className="text-[10px] font-bold text-primary/70 uppercase">
+                            Filters
+                          </span>
+                        </div>
                       )}
                     </div>
                   )}
                 </Button>
               </DrawerTrigger>
-              <DrawerContent className="min-h-[96vh] rounded-t-none border-t-primary/20 bg-background pb-8 outline-hidden">
-                <DrawerHeader className="border-b border-border/50 pb-6 text-left">
-                  <DrawerTitle className="text-2xl font-black tracking-tighter uppercase">
-                    Refine Search
+              <DrawerContent className="min-h-[96vh] rounded-t-none border-t-primary/20 bg-background pb-8">
+                <DrawerHeader className="border-b border-border/50 py-4 text-left">
+                  <DrawerTitle
+                    className="text-xl font-black tracking-tighter uppercase focus:outline-hidden"
+                    tabIndex={-1}
+                    autoFocus
+                  >
+                    Filters & Sort
                   </DrawerTitle>
-                  <DrawerDescription className="font-bold text-muted-foreground/60 uppercase">
+                  <DrawerDescription className="sr-only">
                     Adjust formats and sorting to find the right entry.
                   </DrawerDescription>
                 </DrawerHeader>
@@ -806,7 +783,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
                           className={cn(
                             "h-12 justify-start rounded-none border-primary/20 font-black uppercase",
                             sort === s.value &&
-                              "bg-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary),0.3)]"
+                              "bg-primary text-primary-foreground shadow-md shadow-primary/30"
                           )}
                           onClick={() => setSort(s.value)}
                         >
@@ -825,7 +802,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
                       className={cn(
                         "h-14 w-full gap-3 rounded-none text-base font-black tracking-tighter uppercase transition-all",
                         isFiltersDirty
-                          ? "bg-primary text-primary-foreground shadow-[0_0_25px_rgba(var(--primary),0.4)]"
+                          ? "bg-primary text-primary-foreground shadow-lg shadow-primary/40"
                           : "bg-muted text-muted-foreground"
                       )}
                     >
@@ -844,41 +821,62 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
         </div>
 
         {/* Row 3: Quick Actions */}
-        <div className="flex flex-wrap items-center gap-2 border-t border-white/5 pt-4 sm:gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 gap-2 rounded-none border-primary/20 font-black tracking-tighter uppercase"
-            onClick={handleAutoSelect}
-            disabled={isLoading || searchResults.length === 0}
-          >
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs sm:text-sm">Auto Select</span>
-          </Button>
+        <div className="flex flex-wrap items-center gap-2 border-t border-white/5 pt-4 pb-1 sm:gap-3">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 w-9 gap-2 rounded-none border-primary/30 p-0 font-black tracking-tighter text-primary uppercase hover:bg-primary/10 sm:w-auto sm:px-3"
+                onClick={handleAutoSelect}
+                disabled={isLoading || searchResults.length === 0}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span className="hidden text-xs whitespace-nowrap sm:inline sm:text-sm">
+                  Auto Select
+                </span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Auto Select Perfect Matches</TooltipContent>
+          </Tooltip>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 gap-2 rounded-none border-primary/20 font-black tracking-tighter uppercase"
-            onClick={handleSelectAll}
-            disabled={isLoading || searchResults.length === 0}
-          >
-            <CheckSquare className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs sm:text-sm">Select All</span>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 w-9 gap-2 rounded-none border-emerald-500/30 p-0 font-black tracking-tighter text-emerald-600 uppercase hover:bg-emerald-500/10 sm:w-auto sm:px-3 dark:text-emerald-400"
+                onClick={handleSelectAll}
+                disabled={isLoading || searchResults.length === 0}
+              >
+                <CheckSquare className="h-3.5 w-3.5" />
+                <span className="hidden text-xs whitespace-nowrap sm:inline sm:text-sm">
+                  Select All
+                </span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Select All Results</TooltipContent>
+          </Tooltip>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 gap-2 rounded-none border-destructive/20 font-black tracking-tighter uppercase hover:bg-destructive/10"
-              onClick={handleClearAll}
-            >
-              <RotateCcw className="h-3.5 w-3.5 text-destructive" />
-              <span className="text-xs sm:text-sm">Undo All</span>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 w-9 gap-2 rounded-none border-destructive/30 p-0 font-black tracking-tighter text-destructive uppercase hover:bg-destructive/10 sm:w-auto sm:px-3"
+                  onClick={handleClearAll}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span className="hidden text-xs whitespace-nowrap sm:inline sm:text-sm">
+                    Undo All
+                  </span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Clear All Selections</TooltipContent>
+            </Tooltip>
             {currentEntry.selections.length > 0 && (
-              <Badge className="h-9 rounded-none border border-primary/20 bg-primary/5 px-4 text-sm font-black text-primary shadow-none">
+              <Badge className="h-9 rounded-none border border-primary/20 bg-primary/5 px-3 text-sm font-black text-primary shadow-none sm:px-4">
                 {currentEntry.selections.length}
               </Badge>
             )}
@@ -887,7 +885,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
       </div>
 
       {/* ── Results ── */}
-      <div className="p-4 sm:p-6 lg:p-8">
+      <CardContent className="p-1 sm:p-6 lg:p-8">
         {isLoading ? (
           <div className="flex flex-col gap-6">
             {[1, 2, 3].map((i) => (
@@ -970,7 +968,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
             )}
           </div>
         )}
-      </div>
+      </CardContent>
     </Card>
   )
 }
