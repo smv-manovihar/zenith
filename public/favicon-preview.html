@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Zenith Favicon Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 48px;
+      background: #1a1a2e;
+    }
+
+    h2 {
+      color: #888;
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .row {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* The exact Navbar class: font-black tracking-widest text-primary uppercase */
+    .logo-z {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: oklch(0.505 0.213 27.518);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      user-select: none;
+    }
+
+    /* letter-spacing adds trailing space after the last glyph — cancel it */
+    .logo-z span {
+      margin-right: -0.15em;
+    }
+
+    /* Sizes */
+    .sz-16  { width: 16px;  height: 16px;  font-size: 12px; }
+    .sz-32  { width: 32px;  height: 32px;  font-size: 22px; }
+    .sz-48  { width: 48px;  height: 48px;  font-size: 34px; }
+    .sz-64  { width: 64px;  height: 64px;  font-size: 46px; }
+    .sz-128 { width: 128px; height: 128px; font-size: 92px; }
+
+    /* Backgrounds */
+    .light-bg { background: #ffffff; }
+    .dark-bg  { background: oklch(0.141 0.005 285.823); }
+
+    /* Dark variant uses dark-mode primary */
+    .dark-bg .logo-z { color: oklch(0.444 0.177 26.899); }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .label {
+      font-size: 11px;
+      color: #666;
+      font-family: monospace;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Light background row -->
+  <div>
+    <h2>Light Background</h2>
+    <div class="row">
+      <div class="card">
+        <div class="logo-z light-bg sz-16"><span>Z</span></div>
+        <div class="label">16px</div>
+      </div>
+      <div class="card">
+        <div class="logo-z light-bg sz-32"><span>Z</span></div>
+        <div class="label">32px</div>
+      </div>
+      <div class="card">
+        <div class="logo-z light-bg sz-48"><span>Z</span></div>
+        <div class="label">48px</div>
+      </div>
+      <div class="card">
+        <div class="logo-z light-bg sz-64"><span>Z</span></div>
+        <div class="label">64px</div>
+      </div>
+      <div class="card">
+        <div class="logo-z light-bg sz-128"><span>Z</span></div>
+        <div class="label">128px</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dark background row -->
+  <div>
+    <h2>Dark Background</h2>
+    <div class="row">
+      <div class="card">
+        <div class="logo-z dark-bg sz-16"><span>Z</span></div>
+        <div class="label">16px</div>
+      </div>
+      <div class="card">
+        <div class="logo-z dark-bg sz-32"><span>Z</span></div>
+        <div class="label">32px</div>
+      </div>
+      <div class="card">
+        <div class="logo-z dark-bg sz-48"><span>Z</span></div>
+        <div class="label">48px</div>
+      </div>
+      <div class="card">
+        <div class="logo-z dark-bg sz-64"><span>Z</span></div>
+        <div class="label">64px</div>
+      </div>
+      <div class="card">
+        <div class="logo-z dark-bg sz-128"><span>Z</span></div>
+        <div class="label">128px</div>
+      </div>
+    </div>
+  </div>
+  <!-- SVG Path version (actual favicon) -->
+  <div>
+    <h2>SVG Path (actual favicon.svg)</h2>
+    <div class="row">
+      <!-- Light -->
+      <div class="card">
+        <svg width="16" height="16" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect fill="#ffffff" width="32" height="32"/><g fill="oklch(0.505 0.213 27.518)" transform="translate(6.97, 3) scale(0.3714)"><path d="M 48.6 70 L 0 70 L 0 53.2 L 34.6 13.4 L 34.6 11.8 L 1 11.8 L 1 0 L 48.4 0 L 48.4 16.8 L 13.8 56.6 L 13.8 58.2 L 48.6 58.2 L 48.6 70 Z"/></g></svg>
+        <div class="label">16 light</div>
+      </div>
+      <div class="card">
+        <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect fill="#ffffff" width="32" height="32"/><g fill="oklch(0.505 0.213 27.518)" transform="translate(6.97, 3) scale(0.3714)"><path d="M 48.6 70 L 0 70 L 0 53.2 L 34.6 13.4 L 34.6 11.8 L 1 11.8 L 1 0 L 48.4 0 L 48.4 16.8 L 13.8 56.6 L 13.8 58.2 L 48.6 58.2 L 48.6 70 Z"/></g></svg>
+        <div class="label">32 light</div>
+      </div>
+      <div class="card">
+        <svg width="64" height="64" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect fill="#ffffff" width="32" height="32"/><g fill="oklch(0.505 0.213 27.518)" transform="translate(6.97, 3) scale(0.3714)"><path d="M 48.6 70 L 0 70 L 0 53.2 L 34.6 13.4 L 34.6 11.8 L 1 11.8 L 1 0 L 48.4 0 L 48.4 16.8 L 13.8 56.6 L 13.8 58.2 L 48.6 58.2 L 48.6 70 Z"/></g></svg>
+        <div class="label">64 light</div>
+      </div>
+      <div class="card">
+        <svg width="128" height="128" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect fill="#ffffff" width="32" height="32"/><g fill="oklch(0.505 0.213 27.518)" transform="translate(6.97, 3) scale(0.3714)"><path d="M 48.6 70 L 0 70 L 0 53.2 L 34.6 13.4 L 34.6 11.8 L 1 11.8 L 1 0 L 48.4 0 L 48.4 16.8 L 13.8 56.6 L 13.8 58.2 L 48.6 58.2 L 48.6 70 Z"/></g></svg>
+        <div class="label">128 light</div>
+      </div>
+      <!-- Dark -->
+      <div class="card">
+        <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect fill="oklch(0.141 0.005 285.823)" width="32" height="32"/><g fill="oklch(0.444 0.177 26.899)" transform="translate(6.97, 3) scale(0.3714)"><path d="M 48.6 70 L 0 70 L 0 53.2 L 34.6 13.4 L 34.6 11.8 L 1 11.8 L 1 0 L 48.4 0 L 48.4 16.8 L 13.8 56.6 L 13.8 58.2 L 48.6 58.2 L 48.6 70 Z"/></g></svg>
+        <div class="label">32 dark</div>
+      </div>
+      <div class="card">
+        <svg width="64" height="64" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect fill="oklch(0.141 0.005 285.823)" width="32" height="32"/><g fill="oklch(0.444 0.177 26.899)" transform="translate(6.97, 3) scale(0.3714)"><path d="M 48.6 70 L 0 70 L 0 53.2 L 34.6 13.4 L 34.6 11.8 L 1 11.8 L 1 0 L 48.4 0 L 48.4 16.8 L 13.8 56.6 L 13.8 58.2 L 48.6 58.2 L 48.6 70 Z"/></g></svg>
+        <div class="label">64 dark</div>
+      </div>
+      <div class="card">
+        <svg width="128" height="128" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect fill="oklch(0.141 0.005 285.823)" width="32" height="32"/><g fill="oklch(0.444 0.177 26.899)" transform="translate(6.97, 3) scale(0.3714)"><path d="M 48.6 70 L 0 70 L 0 53.2 L 34.6 13.4 L 34.6 11.8 L 1 11.8 L 1 0 L 48.4 0 L 48.4 16.8 L 13.8 56.6 L 13.8 58.2 L 48.6 58.2 L 48.6 70 Z"/></g></svg>
+        <div class="label">128 dark</div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

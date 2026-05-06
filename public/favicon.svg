@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .z  { fill: oklch(0.505 0.213 27.518); }
+      @media (prefers-color-scheme: dark) {
+        .bg { fill: oklch(0.141 0.005 285.823); }
+        .z  { fill: oklch(0.444 0.177 26.899); }
+      }
+    </style>
+  </defs>
+
+  <rect class="bg" width="32" height="32"/>
+
+  <!--
+    Space Grotesk Bold "Z" glyph path (source viewBox: 48.6 × 70).
+    Scaled to fit 26×26 with 3px padding on all sides inside 32×32.
+    scale = 26/70 = 0.3714
+    translate x = (32 - 48.6*0.3714) / 2 ≈ 6.97
+    translate y = (32 - 70*0.3714) / 2 = 3
+  -->
+  <g class="z" transform="translate(6.97, 3) scale(0.3714)">
+    <path d="M 48.6 70 L 0 70 L 0 53.2 L 34.6 13.4 L 34.6 11.8 L 1 11.8 L 1 0 L 48.4 0 L 48.4 16.8 L 13.8 56.6 L 13.8 58.2 L 48.6 58.2 L 48.6 70 Z"/>
+  </g>
+</svg>
