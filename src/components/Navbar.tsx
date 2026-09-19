@@ -15,7 +15,7 @@ import {
 } from "lucide-react"
 import { useTheme } from "./theme-provider"
 import { cn } from "@/lib/utils"
-import { useScrollDirection } from "@/hooks/useScrollDirection"
+import { useScrollNavbar } from "@/hooks/useScrollNavbar"
 import {
   Tooltip,
   TooltipContent,
@@ -33,7 +33,7 @@ export const Navbar: React.FC = () => {
   const { theme, setTheme } = useTheme()
   const location = useLocation()
   const navigate = useNavigate()
-  const scrollDirection = useScrollDirection()
+  const navRef = useScrollNavbar()
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark")
@@ -56,9 +56,9 @@ export const Navbar: React.FC = () => {
 
   return (
     <nav
+      ref={navRef}
       className={cn(
-        "fixed top-0 right-0 left-0 z-50 border-b bg-background/80 backdrop-blur-md transition-transform duration-300",
-        scrollDirection === "down" ? "-translate-y-full" : "translate-y-0"
+        "fixed top-0 right-0 left-0 z-50 border-b bg-background/80 backdrop-blur-md will-change-transform"
       )}
     >
       <div className="container mx-auto px-4">

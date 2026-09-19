@@ -76,7 +76,6 @@ export const MediaCard = memo<MediaCardProps>(
     isSelected,
     onSelect,
     relationType,
-    hasRelations,
     isExpanded,
     onToggleExpand,
     rating,
@@ -364,7 +363,7 @@ export const MediaCard = memo<MediaCardProps>(
               {/* Action Buttons: Moved to Bottom */}
               <div className="mt-1 flex items-center justify-end border-t border-dashed border-border/50 pt-3">
                 <div className="flex gap-2">
-                  {hasRelations && (
+                  {onToggleExpand && (
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
@@ -415,7 +414,7 @@ export const MediaCard = memo<MediaCardProps>(
         </div>
 
         {/* Expanded Relations */}
-        {isExpanded && media.relations?.edges?.length > 0 && (
+        {isExpanded && (
           <div className="ml-0 animate-in border-l-2 border-primary/10 pl-3 duration-500 slide-in-from-top-4 md:ml-8 md:pl-8">
             <div className="mb-4 flex items-center gap-4">
               <span className="text-[10px] font-black tracking-[0.3em] text-muted-foreground uppercase opacity-50">
@@ -423,32 +422,40 @@ export const MediaCard = memo<MediaCardProps>(
               </span>
               <div className="h-px flex-1 bg-muted/50" />
             </div>
-            <div className="grid grid-cols-1 gap-4">
-              {media.relations.edges
-                .filter((edge: any) => edge.node.type === "ANIME")
-                .map((edge: any) => (
-                  <MediaCard
-                    key={edge.node.id}
-                    media={edge.node}
-                    isSelected={isMediaSelected(edge.node.id)}
-                    onSelect={handleToggleSelection}
-                    relationType={edge.relationType}
-                    rating={getMediaRating(edge.node.id)}
-                    onUpdateRating={updateSelectionRating}
-                    status={status}
-                    onUpdateStatus={onUpdateStatus}
-                    progress={progress}
-                    onUpdateProgress={onUpdateProgress}
-                    totalEpisodes={edge.node.episodes}
-                    isMediaSelected={isMediaSelected}
-                    handleToggleSelection={handleToggleSelection}
-                    getMediaRating={getMediaRating}
-                    updateSelectionRating={updateSelectionRating}
-                    onViewDetails={onViewDetails}
-                    onToggleExpand={onToggleExpand}
-                  />
-                ))}
-            </div>
+            {media.relations?.edges?.filter((edge: any) => edge.node.type === "ANIME").length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {media.relations.edges
+                  .filter((edge: any) => edge.node.type === "ANIME")
+                  .map((edge: any) => (
+                    <MediaCard
+                      key={edge.node.id}
+                      media={edge.node}
+                      isSelected={isMediaSelected(edge.node.id)}
+                      onSelect={handleToggleSelection}
+                      relationType={edge.relationType}
+                      rating={getMediaRating(edge.node.id)}
+                      onUpdateRating={updateSelectionRating}
+                      status={status}
+                      onUpdateStatus={onUpdateStatus}
+                      progress={progress}
+                      onUpdateProgress={onUpdateProgress}
+                      totalEpisodes={edge.node.episodes}
+                      isMediaSelected={isMediaSelected}
+                      handleToggleSelection={handleToggleSelection}
+                      getMediaRating={getMediaRating}
+                      updateSelectionRating={updateSelectionRating}
+                      onViewDetails={onViewDetails}
+                      onToggleExpand={onToggleExpand}
+                    />
+                  ))}
+              </div>
+            ) : (
+              <div className="rounded-none border border-dashed border-border/50 bg-muted/10 p-4 text-center">
+                <p className="text-xs font-medium text-muted-foreground">
+                  No related shows found.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

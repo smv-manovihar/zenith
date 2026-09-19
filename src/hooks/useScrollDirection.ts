@@ -1,44 +1,50 @@
 import { useState, useEffect } from "react"
 
 export function useScrollDirection() {
-  const [scrollDirection, setScrollDirection] = useState<"up" | "down" | null>(
-    null
-  )
+  const [scrollDirection, setScrollDirection] = useState<"up" | "down">("up")
 
   useEffect(() => {
     let lastScrollY = window.scrollY
+    let ticking = false
 
     const updateScrollDirection = () => {
       const scrollY = window.scrollY
-      
-      // Always show navbar at the very top (first 100px)
-      if (scrollY <= 100) {
+
+      // At the very top, always show navbar smoothly
+      if (scrollY <= 10) {
         setScrollDirection("up")
         lastScrollY = scrollY
+        ticking = false
         return
       }
 
       const diff = scrollY - lastScrollY
-      const direction = diff > 0 ? "down" : "up"
-      
-      // Threshold check:
-      // Use a larger threshold for hiding (down) to avoid flickering/premature hiding
-      // and a smaller threshold for showing (up) for responsiveness.
-      const threshold = direction === "down" ? 20 : 10
-      
-      if (Math.abs(diff) > threshold) {
-        if (direction !== scrollDirection) {
-          setScrollDirection(direction)
-        }
+
+      // Downward scroll goes up right away (threshold: 10px)
+      // Upward scroll comes back very easily and responsively (threshold: 5px)
+      if (diff > 10) {
+        setScrollDirection("down")
         lastScrollY = scrollY
+      } else if (diff < -5) {
+        setScrollDirection("up")
+        lastScrollY = scrollY
+      }
+
+      ticking = false
+    }
+
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateScrollDirection)
+        ticking = true
       }
     }
 
-    window.addEventListener("scroll", updateScrollDirection)
+    window.addEventListener("scroll", onScroll, { passive: true })
     return () => {
-      window.removeEventListener("scroll", updateScrollDirection)
+      window.removeEventListener("scroll", onScroll)
     }
-  }, [scrollDirection])
+  }, [])
 
   return scrollDirection
 }

@@ -208,17 +208,41 @@ const Import: FC = () => {
 
   const config = getScoreConfig(scoreFormat)
 
+  const parseCsvRow = (rowText: string): string[] => {
+    const result: string[] = []
+    let current = ""
+    let inQuotes = false
+
+    for (let i = 0; i < rowText.length; i++) {
+      const char = rowText[i]
+      const nextChar = rowText[i + 1]
+
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          current += '"'
+          i++
+        } else {
+          inQuotes = !inQuotes
+        }
+      } else if (char === "," && !inQuotes) {
+        result.push(current.trim())
+        current = ""
+      } else {
+        current += char
+      }
+    }
+    result.push(current.trim())
+    return result
+  }
+
   const parseCSV = (content: string) => {
     const lines = content
-      .split("\n")
+      .split(/\r?\n/)
       .map((line) => line.trim())
       .filter((line) => line.length > 0)
     if (lines.length < 2) return null
 
-    const headers = lines[0]
-      .toLowerCase()
-      .split(",")
-      .map((h) => h.trim())
+    const headers = parseCsvRow(lines[0]).map((h) => h.toLowerCase())
     const nameIdx = headers.findIndex(
       (h) =>
         h.includes("anime name") ||
@@ -238,7 +262,7 @@ const Import: FC = () => {
     const failed: string[] = []
 
     for (let i = 1; i < lines.length; i++) {
-      const row = lines[i].split(",").map((col) => col.trim())
+      const row = parseCsvRow(lines[i])
       if (
         row[nameIdx] &&
         row[ratingIdx] &&

@@ -354,11 +354,15 @@ export const MediaDetailsDialog: FC<MediaDetailsDialogProps> = ({
                 </div>
 
                 {/* Relations */}
-                {media.relations?.edges?.length > 0 && (
-                  <div className="space-y-3">
-                    <h4 className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase opacity-60">
-                      Relations
-                    </h4>
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase opacity-60">
+                    Relations
+                  </h4>
+                  {media.relations?.edges?.filter(
+                    (edge: any) =>
+                      edge.node.type === "ANIME" ||
+                      edge.relationType === "SOURCE"
+                  ).length > 0 ? (
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                       {media.relations.edges
                         .filter(
@@ -370,8 +374,14 @@ export const MediaDetailsDialog: FC<MediaDetailsDialogProps> = ({
                           <RelationCard key={edge.node.id} edge={edge} />
                         ))}
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="rounded-none border border-dashed border-border/50 bg-muted/10 p-3 text-center">
+                      <p className="text-xs text-muted-foreground">
+                        No related shows found.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </>

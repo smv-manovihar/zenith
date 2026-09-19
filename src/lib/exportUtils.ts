@@ -7,8 +7,12 @@ export function downloadFile(content: string, filename: string, mime: string) {
   const a = document.createElement("a")
   a.href = url
   a.download = filename
+  document.body.appendChild(a)
   a.click()
-  URL.revokeObjectURL(url)
+  document.body.removeChild(a)
+  setTimeout(() => {
+    URL.revokeObjectURL(url)
+  }, 1000)
 }
 
 export function generateMalXml(
@@ -27,7 +31,7 @@ export function generateMalXml(
         REPEATING: "Completed",
       }
       const malStatus = statusMap[selection.anilistStatus] ?? "Completed"
-      
+
       // Normalize score to 0–10 integer for MAL XML
       let malScore = selection.rating
       if (scoreFormat === "POINT_100")

@@ -5,61 +5,168 @@ const ANILIST_URL = 'https://graphql.anilist.co/';
 /**
  * Global Rate Limit Tracker
  */
-class RateLimitManager {
-  limit: number = 30;
-  remaining: number = 30;
-  resetAt: number = 0; 
-  retryAfter: number = 0; // Number of seconds to wait
+export interface RateLimitInfo {
+  limit: number;
+  remaining: number;
+  resetAt: number;
+  retryAfter: number;
+}
 
-  update(headers: any) {
-    this.retryAfter = 0; // Reset before checking fresh headers
-    if (headers['x-ratelimit-limit']) {
-      this.limit = parseInt(headers['x-ratelimit-limit']);
+type RateLimitListener = (info: RateLimitInfo) => void;
+
+/**
+ * Global Dynamic Rate Limit Manager
+ * Dynamically adapts to AniList's changing rate limits (standard 90/min or degraded 30-60/min),
+ * calculating optimal request pacing based on real-time response headers.
+ */
+class RateLimitManager {
+  limit: number = 90;
+  remaining: number = 90;
+  resetAt: number = Math.floor(Date.now() / 1000) + 60; 
+  retryAfter: number = 0;
+  private listeners: Set<RateLimitListener> = new Set();
+
+  update(headers: Record<string, any> = {}) {
+    this.retryAfter = 0;
+    let changed = false;
+
+    // Normalize header lookup across different casing
+    const getHeader = (key: string): string | undefined => {
+      const lowerKey = key.toLowerCase();
+      for (const [k, v] of Object.entries(headers)) {
+        if (k.toLowerCase() === lowerKey) return typeof v === "string" ? v : String(v);
+      }
+      return undefined;
+    };
+
+    const limitHeader = getHeader("x-ratelimit-limit");
+    const remainingHeader = getHeader("x-ratelimit-remaining");
+    const resetHeader = getHeader("x-ratelimit-reset");
+    const retryAfterHeader = getHeader("retry-after");
+
+    if (limitHeader) {
+      const parsed = parseInt(limitHeader, 10);
+      if (!isNaN(parsed) && parsed > 0 && parsed !== this.limit) {
+        this.limit = parsed;
+        changed = true;
+      }
     }
-    if (headers['x-ratelimit-remaining']) {
-      this.remaining = parseInt(headers['x-ratelimit-remaining']);
+    if (remainingHeader) {
+      const parsed = parseInt(remainingHeader, 10);
+      if (!isNaN(parsed) && parsed >= 0 && parsed !== this.remaining) {
+        this.remaining = parsed;
+        changed = true;
+      }
     }
-    if (headers['x-ratelimit-reset']) {
-      this.resetAt = parseInt(headers['x-ratelimit-reset']);
+    if (resetHeader) {
+      const parsed = parseInt(resetHeader, 10);
+      if (!isNaN(parsed) && parsed > 0 && parsed !== this.resetAt) {
+        this.resetAt = parsed;
+        changed = true;
+      }
     }
-    if (headers['retry-after']) {
-      this.retryAfter = parseInt(headers['retry-after']);
+    if (retryAfterHeader) {
+      const parsed = parseInt(retryAfterHeader, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        this.retryAfter = parsed;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.notify();
     }
   }
 
+  subscribe(listener: RateLimitListener): () => void {
+    this.listeners.add(listener);
+    listener(this.info);
+    return () => this.listeners.delete(listener);
+  }
+
+  private notify() {
+    const current = this.info;
+    this.listeners.forEach((listener) => {
+      try {
+        listener(current);
+      } catch (e) {
+        console.error("Rate limit listener error:", e);
+      }
+    });
+  }
+
+  get info(): RateLimitInfo {
+    return {
+      limit: this.limit,
+      remaining: this.remaining,
+      resetAt: this.resetAt,
+      retryAfter: this.retryAfter,
+    };
+  }
+
   get isRateLimited(): boolean {
-    return (this.remaining <= 0 || this.retryAfter > 0) && 
-           (Date.now() / 1000 < this.resetAt || this.retryAfter > 0);
+    const nowSec = Date.now() / 1000;
+    return (this.remaining <= 1 || this.retryAfter > 0) && 
+           (nowSec < this.resetAt || this.retryAfter > 0);
   }
 
   get waitTime(): number {
     if (this.retryAfter > 0) {
-      const wait = (this.retryAfter * 1000) + 1500;
-      // We reset retryAfter once we've calculated the wait time for this request
-      // so it doesn't persist forever, but note that 429 handlers should 
-      // ideally rely on the response headers.
-      return wait;
+      return (this.retryAfter * 1000) + 1500;
     }
     if (!this.isRateLimited) return 0;
-    return Math.max(0, (this.resetAt * 1000) - Date.now() + 1500); // +1.5s safety buffer
+    const nowMs = Date.now();
+    const resetMs = this.resetAt * 1000;
+    return Math.max(0, resetMs - nowMs + 1500); // +1.5s safety buffer
+  }
+
+  /**
+   * Dynamically calculates optimal delay between requests based on actual quota remaining
+   * and time remaining until the rate-limit window resets.
+   */
+  getDynamicDelay(preferredDelay = 1500): number {
+    if (this.isRateLimited) {
+      return this.waitTime;
+    }
+
+    const nowMs = Date.now();
+    const resetMs = this.resetAt * 1000;
+    const timeRemainingMs = Math.max(0, resetMs - nowMs);
+    const ratioRemaining = this.limit > 0 ? this.remaining / this.limit : 1;
+
+    // If quota is getting low, dynamically pace requests across the window
+    if (this.remaining > 0 && timeRemainingMs > 0) {
+      // Minimum delay to evenly distribute remaining requests over the window
+      const evenPacing = Math.ceil(timeRemainingMs / this.remaining) + 250;
+
+      if (ratioRemaining <= 0.15 || this.remaining <= 3) {
+        // Critical: under 15% quota remaining
+        return Math.max(preferredDelay, evenPacing, 4000);
+      } else if (ratioRemaining <= 0.35 || this.remaining <= 8) {
+        // Warning: under 35% quota remaining
+        return Math.max(preferredDelay, evenPacing, 2500);
+      }
+    }
+
+    return preferredDelay;
   }
 }
 
 export const rateLimiter = new RateLimitManager();
 
-export interface AniListResponse {
-  data: any;
+export interface AniListResponse<T = any> {
+  data: T;
   headers: any;
   errors?: any[];
 }
 
-export const queryAniList = async (
+export const queryAniList = async <T = any>(
   query: string,
-  variables: any = {},
+  variables: Record<string, any> = {},
   token?: string,
   retries = 3,
   signal?: AbortSignal
-): Promise<AniListResponse> => {
+): Promise<AniListResponse<T>> => {
   const reqHeaders: any = {
     "Content-Type": "application/json",
     Accept: "application/json",
