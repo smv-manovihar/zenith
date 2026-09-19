@@ -242,12 +242,12 @@ const Search: FC = () => {
   return (
     <div className="mx-auto w-full max-w-6xl animate-in space-y-6 px-1 pb-24 duration-500 fade-in slide-in-from-bottom-4 sm:px-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="bg-linear-to-b from-foreground to-foreground/70 bg-clip-text text-3xl font-black tracking-tighter text-transparent uppercase sm:text-4xl">
+          <h2 className="text-xl font-black tracking-tight uppercase sm:text-2xl md:text-3xl">
             Search AniList
           </h2>
-          <p className="max-w-md text-xs font-bold text-muted-foreground/60 sm:text-sm">
+          <p className="mt-1 max-w-lg text-xs font-medium text-muted-foreground sm:text-sm">
             Discover and manage your AniList collection directly.
           </p>
         </div>
@@ -280,7 +280,7 @@ const Search: FC = () => {
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2">
           <Select value={season} onValueChange={setSeason}>
-            <SelectTrigger className="w-[110px]">
+            <SelectTrigger className="w-28">
               <SelectValue placeholder="Season" />
             </SelectTrigger>
             <SelectContent>
@@ -294,7 +294,7 @@ const Search: FC = () => {
           </Select>
 
           <Select value={seasonYear} onValueChange={setSeasonYear}>
-            <SelectTrigger className="w-[90px]">
+            <SelectTrigger className="w-24">
               <SelectValue placeholder="Year" />
             </SelectTrigger>
             <SelectContent>
@@ -322,7 +322,7 @@ const Search: FC = () => {
           </Select>
 
           <Select value={sort} onValueChange={setSort}>
-            <SelectTrigger className="w-[120px]">
+            <SelectTrigger className="w-30">
               <SelectValue placeholder="Sort By" />
             </SelectTrigger>
             <SelectContent>

@@ -36,10 +36,10 @@ export const ReviewHeader: FC<ReviewHeaderProps> = ({
     <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
       <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black tracking-tight uppercase sm:text-3xl">
+          <h2 className="text-xl font-black tracking-tight uppercase sm:text-2xl md:text-3xl">
             Review Matches
           </h2>
-          <p className="font-medium text-muted-foreground">
+          <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">
             Verify and match imported entries with AniList records.
           </p>
         </div>
@@ -81,7 +81,7 @@ export const ReviewHeader: FC<ReviewHeaderProps> = ({
           <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase sm:text-xs">
             Progress
           </span>
-          <div className="h-1.5 min-w-[60px] flex-1 overflow-hidden rounded-none bg-muted sm:w-32 sm:flex-initial md:w-48">
+          <div className="h-1.5 min-w-15 flex-1 overflow-hidden rounded-none bg-muted sm:w-32 sm:flex-initial md:w-48">
             <div
               className="h-full bg-primary transition-all duration-700"
               style={{

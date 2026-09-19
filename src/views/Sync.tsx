@@ -78,7 +78,7 @@ const SyncRowComponent = ({
   if (item.type === "header") {
     return (
       <div style={style} className="px-1 sm:px-2">
-        <div className="flex min-h-[32px] items-center justify-between border-b border-primary/10 bg-muted/20 px-2 py-1 sm:px-3">
+        <div className="flex min-h-8 items-center justify-between border-b border-primary/10 bg-muted/20 px-2 py-1 sm:px-3">
           <span className="truncate text-[9px] font-black tracking-[0.15em] text-muted-foreground uppercase sm:text-[10px]">
             {item.entry.name}
           </span>
@@ -102,7 +102,7 @@ const SyncRowComponent = ({
     <div style={style} className="px-1 sm:px-2">
       <div
         className={cn(
-          "group flex h-[60px] items-center justify-between border-b border-primary/5 bg-card/40 p-2 transition-all duration-300 last:border-0 hover:bg-card/60 sm:h-[72px] sm:gap-4 sm:p-2.5",
+          "group flex h-15 items-center justify-between border-b border-primary/5 bg-card/40 p-2 transition-all duration-300 last:border-0 hover:bg-card/60 sm:h-18 sm:gap-4 sm:p-2.5",
           isSyncing &&
             selection.status === "pending" &&
             "opacity-40 grayscale-[0.5]"
@@ -486,13 +486,13 @@ const Sync: FC = () => {
   return (
     <div className="mx-auto w-full max-w-4xl animate-in space-y-8 px-1 pb-24 duration-700 fade-in slide-in-from-bottom-4 sm:px-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="max-w-lg space-y-3 text-left">
-          <h2 className="bg-linear-to-b from-foreground to-foreground/70 bg-clip-text text-3xl font-black tracking-tighter text-transparent uppercase sm:text-4xl">
+        <div>
+          <h2 className="text-xl font-black tracking-tight uppercase sm:text-2xl md:text-3xl">
             Commit to AniList
           </h2>
-          <p className="max-w-md text-xs font-bold text-muted-foreground/60 sm:text-sm">
+          <p className="mt-1 max-w-lg text-xs font-medium text-muted-foreground sm:text-sm">
             Push your reviewed selections and ratings directly to your AniList
-            account with premium precision and focus.
+            account.
           </p>
         </div>
         <Button
@@ -553,7 +553,7 @@ const Sync: FC = () => {
 
           <Card className="rounded-none border-primary/20 bg-card/20">
             <CardContent className="p-0 sm:p-0">
-              <div className="h-[500px] overflow-hidden rounded-none border-t border-primary/10 bg-black/20 sm:h-[600px]">
+              <div className="h-125 overflow-hidden rounded-none border-t border-primary/10 bg-black/20 sm:h-150">
                 <List
                   listRef={listRef}
                   style={{ height: "100%", width: "100%" }}

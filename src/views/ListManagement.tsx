@@ -31,7 +31,8 @@ import {
   Trash2,
   Edit2,
   Loader2,
-  AlertCircle,
+  AlertTriangle,
+  FolderOpen,
   ExternalLink,
   Download,
   Check,
@@ -152,6 +153,15 @@ const LIST_STATUS_COLORS: Record<string, string> = {
   PAUSED: "bg-orange-500/10 text-orange-500 border-orange-500/20",
   DROPPED: "bg-rose-500/10 text-rose-500 border-rose-500/20",
   REPEATING: "bg-fuchsia-500/10 text-fuchsia-500 border-fuchsia-500/20",
+}
+
+const STATUS_PRIORITY: Record<string, number> = {
+  CURRENT: 1,
+  REPEATING: 2,
+  PLANNING: 3,
+  COMPLETED: 4,
+  PAUSED: 5,
+  DROPPED: 6,
 }
 
 // ── Entry Row ─────────────────────────────────────────────────────────────
@@ -380,7 +390,7 @@ const ListManagement: FC = () => {
   const { token, user } = useProgress()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const initialTab = searchParams.get("status") || "CURRENT"
+  const initialTab = searchParams.get("status") || "ALL"
 
   const serverScoreFormat =
     (user?.scoreFormat as AniListScoreFormat) ?? "POINT_10_DECIMAL"
@@ -389,6 +399,7 @@ const ListManagement: FC = () => {
 
   const [lists, setLists] = useState<ListGroup[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<string>(initialTab)
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
@@ -435,10 +446,11 @@ const ListManagement: FC = () => {
     return () => clearTimeout(timer)
   }, [search])
 
-  if (!token) {
-    navigate("/")
-    return null
-  }
+  useEffect(() => {
+    if (!token) {
+      navigate("/")
+    }
+  }, [token, navigate])
 
   const handleScoreFormatChange = (newFormat: AniListScoreFormat) => {
     setLocalScoreFormat(newFormat)
@@ -462,8 +474,9 @@ const ListManagement: FC = () => {
           scoreFormat: localScoreFormat,
         },
       })
-    } catch (err: any) {
-      toast.error("Failed to update settings: " + err.message)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      toast.error("Failed to update settings: " + message)
     } finally {
       setIsUpdatingFormat(false)
     }
@@ -472,6 +485,7 @@ const ListManagement: FC = () => {
   const fetchList = useCallback(async () => {
     if (!user || !user.id) return
     setLoading(true)
+    setError(null)
     try {
       const res = await queryAniList(
         GET_MEDIA_LIST_COLLECTION,
@@ -479,17 +493,31 @@ const ListManagement: FC = () => {
           userId: user.id,
           type: "ANIME",
         },
-        token
+        token ?? undefined
       )
       const rawLists: ListGroup[] = res.data?.MediaListCollection?.lists ?? []
       setLists(rawLists)
       setFetched(true)
-    } catch (err: any) {
-      toast.error("Failed to load your list: " + err.message)
+
+      const currentStatus = searchParams.get("status")
+      if (!currentStatus) {
+        setActiveTab("ALL")
+      } else if (currentStatus === "CURRENT") {
+        const watchingEntries =
+          rawLists.find((l) => l.status === "CURRENT")?.entries ?? []
+        if (watchingEntries.length === 0) {
+          setActiveTab("ALL")
+          setSearchParams({ status: "ALL" })
+        }
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      setError(message || "Failed to load your AniList collection.")
+      toast.error("Failed to load your list: " + message)
     } finally {
       setLoading(false)
     }
-  }, [token, user])
+  }, [token, user, searchParams, setSearchParams])
 
   useEffect(() => {
     fetchList()
@@ -543,6 +571,15 @@ const ListManagement: FC = () => {
 
     // 6. Sorting
     return [...result].sort((a, b) => {
+      // In "ALL" tab, prioritize Watching (CURRENT) first, followed by repeating, planning, completed, paused, dropped
+      if (activeTab === "ALL") {
+        const priorityA = STATUS_PRIORITY[a.status] ?? 99
+        const priorityB = STATUS_PRIORITY[b.status] ?? 99
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB
+        }
+      }
+
       switch (sort) {
         case "UPDATED_AT_DESC":
           return (b.updatedAt || 0) - (a.updatedAt || 0)
@@ -588,6 +625,7 @@ const ListManagement: FC = () => {
     })
   }, [
     activeGroupEntries,
+    activeTab,
     debouncedSearch,
     season,
     seasonYear,
@@ -635,7 +673,7 @@ const ListManagement: FC = () => {
           score: updates.score,
           progress: updates.progress,
         },
-        token
+        token ?? undefined
       )
       setLists((prev) =>
         prev.map((group) => ({
@@ -653,8 +691,9 @@ const ListManagement: FC = () => {
         }))
       )
       toast.success("Entry updated!")
-    } catch (err: any) {
-      toast.error("Failed to save: " + err.message)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      toast.error("Failed to save: " + message)
     }
   }
 
@@ -662,7 +701,7 @@ const ListManagement: FC = () => {
     async (entry: ListEntry) => {
       setDeletingId(entry.id)
       try {
-        await queryAniList(DELETE_MEDIA_LIST_ENTRY, { id: entry.id }, token)
+        await queryAniList(DELETE_MEDIA_LIST_ENTRY, { id: entry.id }, token ?? undefined)
         setLists((prev) =>
           prev.map((group) => ({
             ...group,
@@ -670,8 +709,9 @@ const ListManagement: FC = () => {
           }))
         )
         toast.success("Entry removed.")
-      } catch (err: any) {
-        toast.error("Failed to delete: " + err.message)
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err)
+        toast.error("Failed to delete: " + message)
       } finally {
         setDeletingId(null)
         setDeleteConfirmEntry(null)
@@ -682,39 +722,52 @@ const ListManagement: FC = () => {
 
   const totalCount = lists.reduce((acc, l) => acc + l.entries.length, 0)
 
+  if (!token) return null
+
   return (
     <div className="mx-auto w-full max-w-5xl animate-in space-y-6 px-1 pb-24 duration-500 fade-in slide-in-from-bottom-4 sm:px-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <h2 className="text-2xl font-black tracking-tight uppercase sm:text-3xl">
+            <h2 className="text-xl font-black tracking-tight uppercase sm:text-2xl md:text-3xl">
               My AniList
             </h2>
             <div className="flex items-center gap-2">
-              <p className="text-xs font-medium text-muted-foreground">
-                {fetched ? `${totalCount} entries` : "Loading your list…"}
+              <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">
+                {error
+                  ? "Error loading list"
+                  : fetched
+                    ? `${totalCount} entries`
+                    : "Loading your list…"}
               </p>
             </div>
           </div>
         </div>
         <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-nowrap sm:items-center">
-          <div className="col-span-2 flex items-center justify-between gap-1.5 rounded-none border border-primary/10 bg-primary/5 px-2 py-2 transition-all hover:border-primary/20 sm:col-auto sm:justify-start sm:py-0.5">
-            <span className="text-[8px] font-black tracking-[0.2em] text-muted-foreground/60 uppercase">
-              Format
-            </span>
+          <div className="col-span-2 flex items-center gap-1 sm:col-auto">
             <DropdownMenu>
               <DropdownMenuTrigger asChild disabled={isUpdatingFormat}>
-                <button className="group flex items-center gap-1 text-[10px] font-black tracking-widest text-primary uppercase transition-colors hover:text-primary/70 disabled:opacity-50">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "w-full justify-between gap-2 rounded-none border-primary/20 bg-primary/5 text-[10px] font-black tracking-widest text-primary uppercase transition-all hover:border-primary/40 hover:bg-primary/10 sm:w-auto",
+                    isUpdatingFormat && "cursor-not-allowed opacity-50"
+                  )}
+                >
+                  <span className="text-[8px] font-black tracking-[0.2em] text-muted-foreground/60 uppercase">
+                    Format:
+                  </span>
                   {isUpdatingFormat ? (
-                    <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                    <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     (SCORE_FORMAT_OPTIONS.find(
                       (o) => o.value === localScoreFormat
                     )?.label.split(" (")[0] ?? localScoreFormat)
                   )}
-                  <ChevronDown className="h-2.5 w-2.5 opacity-40 transition-transform group-hover:translate-y-0.5" />
-                </button>
+                  <ChevronDown className="h-3 w-3 opacity-40 transition-transform group-hover:translate-y-0.5" />
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="rounded-none">
                 <div className="px-2 py-1.5 text-[9px] font-black tracking-[0.2em] text-muted-foreground/60 uppercase">
@@ -725,7 +778,7 @@ const ListManagement: FC = () => {
                     key={opt.value}
                     onClick={() => handleScoreFormatChange(opt.value)}
                     className={cn(
-                      "text-[11px] font-bold",
+                      "cursor-pointer text-[11px] font-bold",
                       opt.value === localScoreFormat && "text-primary"
                     )}
                   >
@@ -738,10 +791,10 @@ const ListManagement: FC = () => {
             {localScoreFormat !== serverScoreFormat && (
               <Button
                 size="sm"
-                variant="ghost"
-                className="h-6 w-6 animate-in rounded-none bg-emerald-500 p-0 text-white shadow-lg shadow-emerald-500/20 zoom-in-95 fade-in hover:bg-emerald-600"
+                className="h-7 w-7 shrink-0 animate-in rounded-none bg-emerald-500 p-0 text-white shadow-lg shadow-emerald-500/20 zoom-in-95 fade-in hover:bg-emerald-600"
                 onClick={handleScoreFormatUpdate}
                 disabled={isUpdatingFormat}
+                title="Save score format to AniList"
               >
                 {isUpdatingFormat ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -774,8 +827,42 @@ const ListManagement: FC = () => {
       </div>
 
       {loading && !fetched && (
-        <div className="flex items-center justify-center py-24">
+        <div className="flex flex-col items-center justify-center py-24 text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary/40" />
+          <p className="mt-4 text-xs font-bold tracking-widest text-muted-foreground uppercase opacity-60">
+            Loading your AniList collection...
+          </p>
+        </div>
+      )}
+
+      {error && !fetched && (
+        <div className="flex min-h-88 flex-col items-center justify-center rounded-none border border-destructive/20 bg-destructive/5 p-8 text-center">
+          <AlertTriangle className="h-10 w-10 text-destructive opacity-80" />
+          <h3 className="mt-4 text-sm font-black tracking-tight text-destructive uppercase">
+            Failed to Load AniList Collection
+          </h3>
+          <p className="mt-2 max-w-md text-xs text-muted-foreground">
+            {error}
+          </p>
+          <div className="mt-6 flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchList()}
+              className="gap-2 rounded-none border-destructive/30 hover:bg-destructive/10"
+            >
+              <RefreshCcw className="h-3.5 w-3.5" />
+              Try Again
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/")}
+              className="rounded-none text-xs"
+            >
+              Go Home
+            </Button>
+          </div>
         </div>
       )}
 
@@ -837,7 +924,7 @@ const ListManagement: FC = () => {
 
             <div className="flex flex-wrap items-center gap-2">
               <Select value={season} onValueChange={setSeason}>
-                <SelectTrigger className="h-9 w-[110px] rounded-none text-[10px] font-bold tracking-wider uppercase">
+                <SelectTrigger className="h-9 w-28 rounded-none text-[10px] font-bold tracking-wider uppercase">
                   <SelectValue placeholder="Season" />
                 </SelectTrigger>
                 <SelectContent className="rounded-none">
@@ -860,7 +947,7 @@ const ListManagement: FC = () => {
               </Select>
 
               <Select value={seasonYear} onValueChange={setSeasonYear}>
-                <SelectTrigger className="h-9 w-[90px] rounded-none text-[10px] font-bold tracking-wider uppercase">
+                <SelectTrigger className="h-9 w-24 rounded-none text-[10px] font-bold tracking-wider uppercase">
                   <SelectValue placeholder="Year" />
                 </SelectTrigger>
                 <SelectContent className="rounded-none">
@@ -883,7 +970,7 @@ const ListManagement: FC = () => {
               </Select>
 
               <Select value={format} onValueChange={setFormat}>
-                <SelectTrigger className="h-9 w-auto min-w-[100px] rounded-none text-[10px] font-bold tracking-wider uppercase">
+                <SelectTrigger className="h-9 w-auto min-w-25 rounded-none text-[10px] font-bold tracking-wider uppercase">
                   <SelectValue placeholder="Format" />
                 </SelectTrigger>
                 <SelectContent className="rounded-none">
@@ -906,7 +993,7 @@ const ListManagement: FC = () => {
               </Select>
 
               <Select value={sort} onValueChange={setSort}>
-                <SelectTrigger className="h-9 w-[160px] rounded-none text-[10px] font-bold tracking-wider uppercase">
+                <SelectTrigger className="h-9 w-40 rounded-none text-[10px] font-bold tracking-wider uppercase">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
                 <SelectContent className="rounded-none">
@@ -961,23 +1048,83 @@ const ListManagement: FC = () => {
             className="w-full flex-1 border-t border-border/50"
           >
             {loading && filteredEntries.length === 0 ? (
-              <div className="flex min-h-[400px] flex-col items-center justify-center py-20 text-center">
+              <div className="flex min-h-100 flex-col items-center justify-center py-20 text-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary/40" />
                 <p className="mt-4 text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-40">
                   Fetching entries...
                 </p>
               </div>
+            ) : totalCount === 0 ? (
+              <div className="flex min-h-100 flex-col items-center justify-center py-20 text-center text-muted-foreground">
+                <FolderOpen className="h-12 w-12 text-primary/40" />
+                <p className="mt-4 text-base font-black tracking-tight text-foreground uppercase">
+                  Your AniList Collection is Empty
+                </p>
+                <p className="mt-1 max-w-sm text-xs font-medium text-muted-foreground">
+                  You haven't added any anime entries to your AniList account yet.
+                </p>
+                <div className="mt-6 flex items-center gap-3">
+                  <Button
+                    size="sm"
+                    className="gap-2 rounded-none bg-primary text-xs font-bold uppercase shadow-lg shadow-primary/20 hover:scale-[1.02]"
+                    onClick={() => navigate("/import")}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Import List
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 rounded-none text-xs font-bold uppercase hover:bg-primary/10 hover:text-primary"
+                    onClick={() => navigate("/search")}
+                  >
+                    <Search className="h-3.5 w-3.5" />
+                    Explore Anime
+                  </Button>
+                </div>
+              </div>
+            ) : activeGroupEntries.length === 0 ? (
+              <div className="flex min-h-100 flex-col items-center justify-center py-20 text-center text-muted-foreground">
+                <FolderOpen className="h-12 w-12 text-muted-foreground/30" />
+                <p className="mt-4 text-sm font-black tracking-tight text-foreground uppercase">
+                  No {STATUS_LABELS[activeTab] ?? activeTab} Entries
+                </p>
+                <p className="mt-1 max-w-sm text-xs font-medium text-muted-foreground">
+                  You don't have any anime in your "{STATUS_LABELS[activeTab] ?? activeTab}" list.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-5 gap-2 rounded-none border-primary/20 text-xs font-bold uppercase hover:bg-primary/10 hover:text-primary"
+                  onClick={() => {
+                    setActiveTab("ALL")
+                    setSearchParams({ status: "ALL" })
+                    handleClearFilters()
+                  }}
+                >
+                  View All Entries ({totalCount})
+                </Button>
+              </div>
             ) : filteredEntries.length === 0 ? (
-              <div className="flex min-h-[400px] flex-col items-center justify-center py-20 text-center text-muted-foreground">
-                <AlertCircle className="h-10 w-10 opacity-20" />
-                <p className="mt-4 text-sm font-bold">
-                  {search
-                    ? "No entries match your search."
-                    : `No entries in ${activeTab === "ALL" ? "your list" : STATUS_LABELS[activeTab]}.`}
+              <div className="flex min-h-100 flex-col items-center justify-center py-20 text-center text-muted-foreground">
+                <FilterX className="h-12 w-12 text-muted-foreground/40" />
+                <p className="mt-4 text-sm font-black tracking-tight text-foreground uppercase">
+                  No Matching Entries Found
                 </p>
-                <p className="mt-1 text-[10px] font-bold tracking-widest uppercase opacity-40">
-                  Try adjusting your filters or search query
+                <p className="mt-1 max-w-sm text-xs font-medium text-muted-foreground">
+                  {debouncedSearch
+                    ? `No entries match "${debouncedSearch}" with the active filters.`
+                    : "No entries match the currently applied filters."}
                 </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-5 gap-2 rounded-none border-primary/20 text-xs font-bold uppercase hover:bg-primary/10 hover:text-primary"
+                  onClick={handleClearFilters}
+                >
+                  <FilterX className="h-3.5 w-3.5" />
+                  Clear Filters
+                </Button>
               </div>
             ) : (
               <div

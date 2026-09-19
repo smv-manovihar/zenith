@@ -423,10 +423,10 @@ const Import: FC = () => {
       <div className="mx-auto w-full max-w-4xl animate-in space-y-6 px-1 pb-40 duration-500 fade-in slide-in-from-bottom-4 sm:space-y-8 sm:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-2xl font-black tracking-tight uppercase sm:text-3xl">
+            <h2 className="text-xl font-black tracking-tight uppercase sm:text-2xl md:text-3xl">
               Zenith Import
             </h2>
-            <p className="text-xs font-medium text-muted-foreground sm:text-sm">
+            <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">
               Import your anime lists via text or CSV to prepare for batch
               synchronization.
             </p>
@@ -538,7 +538,7 @@ const Import: FC = () => {
                 <Textarea
                   ref={textareaRef}
                   placeholder="1. Cowboy Bebop (10)&#10;Akira (9)..."
-                  className="max-h-[500px] min-h-[300px] overflow-y-auto rounded-none font-mono text-sm leading-relaxed focus-visible:ring-primary/30"
+                  className="max-h-125 min-h-75 overflow-y-auto rounded-none font-mono text-sm leading-relaxed focus-visible:ring-primary/30"
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                 />
@@ -564,7 +564,7 @@ const Import: FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="scrollbar-thin scrollbar-thumb-destructive/20 scrollbar-track-transparent max-h-[300px] space-y-2 overflow-y-auto pr-2 sm:max-h-[400px]">
+                  <div className="scrollbar-thin scrollbar-thumb-destructive/20 scrollbar-track-transparent max-h-75 space-y-2 overflow-y-auto pr-2 sm:max-h-100">
                     {failedLines.map((line, idx) => (
                       <div
                         key={idx}
@@ -698,23 +698,23 @@ const Import: FC = () => {
               stiffness: 200,
               opacity: { duration: 0.8 },
             }}
-            className="fixed right-4 bottom-6 left-4 z-50 flex flex-col gap-3 rounded-none border border-primary/20 bg-card/60 p-4 shadow-[0_20px_50px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:bottom-8 sm:mx-auto sm:w-full sm:max-w-md"
+            className="fixed right-3 bottom-3 left-3 z-50 flex flex-col gap-2 rounded-none border border-primary/20 bg-card/60 p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:right-4 sm:bottom-8 sm:left-4 sm:mx-auto sm:w-full sm:max-w-md sm:gap-3 sm:p-4"
           >
-            <div className="flex items-center justify-between px-2 sm:px-4">
+            <div className="flex items-center justify-between px-1 sm:px-4">
               <div className="flex flex-col">
-                <p className="text-[8px] font-black tracking-[0.2em] text-muted-foreground uppercase sm:text-[9px]">
+                <p className="text-[7px] font-black tracking-[0.15em] text-muted-foreground uppercase sm:text-[9px] sm:tracking-[0.2em]">
                   Import Collection
                 </p>
-                <p className="text-xs font-black text-primary sm:text-sm">
+                <p className="text-[11px] font-black text-primary sm:text-sm">
                   {entries.length} Entries Ready
                 </p>
               </div>
-              <div className="h-8 w-px bg-primary/10" />
+              <div className="h-6 w-px bg-primary/10 sm:h-8" />
               <div className="flex flex-col text-right">
-                <p className="text-[8px] font-black tracking-[0.2em] text-muted-foreground uppercase sm:text-[9px]">
+                <p className="text-[7px] font-black tracking-[0.15em] text-muted-foreground uppercase sm:text-[9px] sm:tracking-[0.2em]">
                   Format
                 </p>
-                <p className="text-xs font-black text-foreground sm:text-sm">
+                <p className="text-[11px] font-black text-foreground sm:text-sm">
                   {formatLabel}
                 </p>
               </div>
@@ -723,10 +723,10 @@ const Import: FC = () => {
             <Button
               size="lg"
               onClick={() => navigate("/review")}
-              className="group h-12 w-full rounded-none bg-primary text-[10px] font-black tracking-widest uppercase shadow-2xl shadow-primary/30 transition-all hover:scale-[1.02] active:scale-95 sm:h-12 sm:text-xs"
+              className="group h-9 w-full rounded-none bg-primary text-[9px] font-black tracking-wider uppercase shadow-2xl shadow-primary/30 transition-all hover:scale-[1.02] active:scale-95 sm:h-12 sm:text-xs sm:tracking-widest"
             >
               Review Entries
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="ml-1.5 h-3.5 w-3.5 transition-transform group-hover:translate-x-1 sm:ml-2 sm:h-4 sm:w-4" />
             </Button>
           </motion.div>
         )}

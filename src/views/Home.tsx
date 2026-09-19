@@ -53,13 +53,13 @@ const Home: React.FC = () => {
       {/* Hero Section */}
       <div className="space-y-8 text-center">
         <div className="space-y-4">
-          <h1 className="bg-linear-to-b from-foreground to-muted-foreground bg-clip-text text-5xl leading-[1.1] font-black tracking-tighter text-transparent md:text-6xl lg:text-8xl">
+          <h1 className="bg-linear-to-b from-foreground to-muted-foreground bg-clip-text text-3xl leading-[1.1] font-black tracking-tighter text-transparent sm:text-5xl md:text-6xl lg:text-8xl">
             Sync Your <br className="hidden md:block" />
             <span className="text-primary">Offline</span> Watch Lists{" "}
             <br className="hidden md:block" />
             to <span className="text-primary">AniList</span>
           </h1>
-          <p className="mx-auto max-w-2xl text-lg leading-relaxed font-medium text-muted-foreground">
+          <p className="mx-auto max-w-2xl text-sm leading-relaxed font-medium text-muted-foreground sm:text-base md:text-lg">
             Simple way to sync your anime watch list to AniList.
           </p>
         </div>

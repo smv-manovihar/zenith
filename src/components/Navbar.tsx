@@ -218,19 +218,26 @@ export const Navbar: React.FC = () => {
 
             {token ? (
               <Popover open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="relative h-9 w-9 gap-0 overflow-hidden rounded-full p-0"
-                  >
-                    <Avatar className="h-full w-full border border-border">
-                      <AvatarImage src={user?.avatar} />
-                      <AvatarFallback className="bg-muted text-sm font-bold">
-                        {user?.name?.charAt(0).toUpperCase() ?? "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </PopoverTrigger>
+                <Tooltip open={isUserMenuOpen ? false : undefined}>
+                  <TooltipTrigger asChild>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="relative h-9 w-9 gap-0 overflow-hidden rounded-full p-0"
+                      >
+                        <Avatar className="h-full w-full border border-border">
+                          <AvatarImage src={user?.avatar} />
+                          <AvatarFallback className="bg-muted text-sm font-bold">
+                            {user?.name?.charAt(0).toUpperCase() ?? "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </PopoverTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" align="end">
+                    Profile
+                  </TooltipContent>
+                </Tooltip>
                 <PopoverContent
                   align="end"
                   sideOffset={8}
@@ -305,7 +312,7 @@ export const Navbar: React.FC = () => {
         {/* Mobile Navigation */}
         {token && (
           <div className="border-t border-border/40 py-2 lg:hidden">
-            <div className="scrollbar-none flex w-full items-center justify-center gap-4 overflow-x-auto pb-1">
+            <div className="scrollbar-none flex w-full items-center justify-between gap-2 overflow-x-auto pb-1 min-[320px]:justify-center min-[360px]:gap-3 sm:gap-4">
               {steps.map((step, index) => {
                 const isActive = location.pathname === step.path
                 const isPast =
@@ -313,31 +320,40 @@ export const Navbar: React.FC = () => {
 
                 return (
                   <React.Fragment key={step.path}>
-                    <Link
-                      to={step.path}
-                      className={cn(
-                        "flex shrink-0 items-center gap-1.5 text-xs font-medium transition-colors hover:text-primary",
-                        isActive ? "text-primary" : "text-muted-foreground"
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "flex h-5 w-5 items-center justify-center rounded-none border text-[9px]",
-                          isActive
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : isPast
-                              ? "border-primary/50 bg-primary/20 text-primary"
-                              : "border-muted-foreground/30"
-                        )}
-                      >
-                        {isPast ? (
-                          <CheckCircle2 className="h-3 w-3" />
-                        ) : (
-                          index + 1
-                        )}
-                      </span>
-                      <span className="whitespace-nowrap">{step.name}</span>
-                    </Link>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link
+                          to={step.path}
+                          className={cn(
+                            "flex shrink-0 items-center gap-1.5 text-xs font-medium transition-colors hover:text-primary",
+                            isActive ? "text-primary" : "text-muted-foreground"
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "flex h-5 w-5 items-center justify-center rounded-none border text-[9px]",
+                              isActive
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : isPast
+                                  ? "border-primary/50 bg-primary/20 text-primary"
+                                  : "border-muted-foreground/30"
+                            )}
+                          >
+                            {isPast ? (
+                              <CheckCircle2 className="h-3 w-3" />
+                            ) : (
+                              index + 1
+                            )}
+                          </span>
+                          <span className="hidden whitespace-nowrap min-[320px]:inline">
+                            {step.name}
+                          </span>
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="min-[320px]:hidden">
+                        {step.name}
+                      </TooltipContent>
+                    </Tooltip>
                     {index < steps.length - 1 && (
                       <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/30" />
                     )}

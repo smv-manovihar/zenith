@@ -2,32 +2,53 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zenith | AniList Sync &amp; Management</title>
     <meta name="description" content="Sync and manage your anime collection on AniList. Import offline watch lists, match series automatically, and streamline your library updates with precision." />
     <meta name="keywords" content="AniList, anime, collection management, sync, watch list, batch update, tracker, anime library, manga tracker, media management, anime import, anime export, franchise explorer, anime sync bridge, zenith anime" />
     <meta name="author" content="Zenith Team" />
-    <meta name="theme-color" content="#D14931" />
 
-    <!-- Open Graph / Facebook -->
+    <!-- Icons & Manifest -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- PWA & Mobile Web App Config -->
+    <meta name="application-name" content="Zenith" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Zenith" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c0d0e" />
+
+    <!-- Open Graph / Facebook / Discord / WhatsApp -->
+    <meta property="og:site_name" content="Zenith" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="%VITE_APP_URL%" />
-    <meta property="og:title" content="Zenith | AniList Sync & Management" />
-    <meta property="og:description" content="Sync and manage your anime collection on AniList. Import watch lists, match series automatically, and streamline your library updates." />
-    <meta property="og:image" content="%VITE_APP_URL%/favicon.svg" />
+    <meta property="og:url" content="https://zenith-anilist.vercel.app" />
+    <meta property="og:title" content="Zenith | AniList Sync &amp; Management" />
+    <meta property="og:description" content="Sync and manage your anime collection on AniList. Import offline watch lists, match series automatically, and streamline your library updates." />
+    <meta property="og:image" content="https://zenith-anilist.vercel.app/og-image.png" />
+    <meta property="og:image:secure_url" content="https://zenith-anilist.vercel.app/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Zenith - AniList Sync &amp; Management" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="%VITE_APP_URL%" />
-    <meta property="twitter:title" content="Zenith | AniList Sync & Management" />
-    <meta property="twitter:description" content="Sync and manage your anime collection on AniList. Import watch lists, match series automatically, and streamline your library updates." />
-    <meta property="twitter:image" content="%VITE_APP_URL%/favicon.svg" />
+    <meta name="twitter:url" content="https://zenith-anilist.vercel.app" />
+    <meta name="twitter:title" content="Zenith | AniList Sync &amp; Management" />
+    <meta name="twitter:description" content="Sync and manage your anime collection on AniList. Import offline watch lists, match series automatically, and streamline your library updates." />
+    <meta name="twitter:image" content="https://zenith-anilist.vercel.app/og-image.png" />
+    <meta name="twitter:image:alt" content="Zenith - AniList Sync &amp; Management" />
 
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https://s4.anilist.co; connect-src 'self' https://graphql.anilist.co; worker-src 'self' blob:;"
     />
-    <title>Zenith | AniList Sync & Management</title>
   </head>
   <body>
     <div id="root"></div>

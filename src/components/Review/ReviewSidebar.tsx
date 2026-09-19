@@ -149,8 +149,8 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
           </TooltipTrigger>
           <TooltipContent>View Your List</TooltipContent>
         </Tooltip>
-        <DrawerContent className="p-0">
-          <DrawerHeader className="border-b px-6 py-4">
+        <DrawerContent className="flex h-[90dvh] max-h-[90dvh] flex-col p-0 data-[vaul-drawer-direction=bottom]:h-[90dvh] data-[vaul-drawer-direction=bottom]:max-h-[90dvh]">
+          <DrawerHeader className="shrink-0 border-b px-6 py-4">
             <DrawerTitle className="flex items-center justify-between text-xs font-black tracking-[0.2em] text-muted-foreground uppercase">
               <div className="flex items-center gap-2">
                 <Library className="h-4 w-4" />
@@ -184,9 +184,9 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
               )}
             </div>
           </DrawerHeader>
-          <div className="p-2">
+          <div className="flex flex-1 min-h-0 flex-col p-2">
             {(isFilterActive || searchQuery) && entries.length === 0 ? (
-              <div className="flex h-[200px] flex-col items-center justify-center p-8 text-center">
+              <div className="flex h-full flex-col items-center justify-center p-8 text-center">
                 <Search className="mb-2 h-8 w-8 text-muted-foreground/30" />
                 <p className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
                   No matching entries
@@ -203,7 +203,7 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
             ) : (
               <List
                 listRef={handleListRef} // Use the callback ref
-                style={{ height: 500, width: "100%" }}
+                style={{ height: "100%", width: "100%" }}
                 rowCount={entries.length}
                 rowHeight={96}
                 rowProps={rowProps}
@@ -257,7 +257,7 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
       <CardContent className="p-0">
         <div className="p-2">
           {(isFilterActive || searchQuery) && entries.length === 0 ? (
-            <div className="flex h-[400px] flex-col items-center justify-center p-8 text-center">
+            <div className="flex h-100 flex-col items-center justify-center p-8 text-center">
               <div className="relative mb-4">
                 <Search className="h-12 w-12 text-muted-foreground/20" />
                 <X className="absolute -right-1 -bottom-1 h-5 w-5 text-destructive/40" />

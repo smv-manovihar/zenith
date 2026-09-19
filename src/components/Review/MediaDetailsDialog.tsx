@@ -256,7 +256,7 @@ export const MediaDetailsDialog: FC<MediaDetailsDialogProps> = ({
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 w-8 p-0 sm:w-auto sm:gap-1.5 sm:px-3"
+                            className="h-8 gap-1.5 px-2.5 sm:px-3"
                             asChild
                           >
                             <a
@@ -265,11 +265,11 @@ export const MediaDetailsDialog: FC<MediaDetailsDialogProps> = ({
                               rel="noopener noreferrer"
                             >
                               <Play className="h-3 w-3" />
-                              <span className="hidden sm:inline text-xs">Trailer</span>
+                              <span className="text-xs">Watch Trailer</span>
                             </a>
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" className="sm:hidden">Watch Trailer</TooltipContent>
+                        <TooltipContent side="bottom">Watch Trailer</TooltipContent>
                       </Tooltip>
                     )}
                   </div>

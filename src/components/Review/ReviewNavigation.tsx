@@ -34,7 +34,7 @@ export const ReviewNavigation: FC<ReviewNavigationProps> = ({
         stiffness: 200,
         opacity: { duration: 0.8 },
       }}
-      className="fixed bottom-6 left-4 right-4 z-50 flex items-center justify-between gap-2 rounded-none border border-primary/20 bg-card/60 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:bottom-8 sm:mx-auto sm:w-full sm:max-w-2xl sm:gap-6 sm:rounded-none sm:p-3"
+      className="fixed bottom-3 right-3 left-3 z-50 flex items-center justify-between gap-1.5 rounded-none border border-primary/20 bg-card/60 p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:right-4 sm:bottom-8 sm:left-4 sm:mx-auto sm:w-full sm:max-w-2xl sm:gap-6 sm:p-3"
     >
       <Tooltip>
         <TooltipTrigger asChild>
@@ -43,9 +43,9 @@ export const ReviewNavigation: FC<ReviewNavigationProps> = ({
             size="sm"
             onClick={onPrev}
             disabled={currentIndex === 0}
-            className="h-10 rounded-none px-4 text-[10px] font-black tracking-widest uppercase hover:bg-muted sm:h-11 sm:px-6 sm:text-xs"
+            className="h-8 rounded-none px-2.5 text-[9px] font-black tracking-wider uppercase hover:bg-muted sm:h-11 sm:px-6 sm:text-xs sm:tracking-widest"
           >
-            <ChevronLeft className="mr-1 h-4 w-4 sm:mr-2" />
+            <ChevronLeft className="mr-0.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
             <span className="xs:inline hidden">Back</span>
             <span className="xs:hidden">Prev</span>
           </Button>
@@ -54,18 +54,18 @@ export const ReviewNavigation: FC<ReviewNavigationProps> = ({
       </Tooltip>
 
       <div className="flex flex-col items-center">
-        <p className="text-[8px] font-black tracking-[0.4em] text-muted-foreground uppercase opacity-40 sm:text-[10px]">
+        <p className="text-[7px] font-black tracking-[0.25em] text-muted-foreground uppercase opacity-40 sm:text-[10px] sm:tracking-[0.4em]">
           #{currentIndex + 1}
         </p>
-        <div className="mt-1 flex gap-1 sm:gap-1.5">
+        <div className="mt-0.5 flex gap-1 sm:mt-1 sm:gap-1.5">
           {Array.from({ length: Math.min(entriesCount, 5) }).map((_, i) => (
             <div
               key={i}
-              className={`h-1 rounded-full transition-all ${
+              className={`h-0.5 rounded-full transition-all sm:h-1 ${
                 (entriesCount > 5
                   ? i + Math.max(0, currentIndex - 2)
                   : i) === currentIndex
-                  ? "w-3 bg-primary sm:w-4"
+                  ? "w-2.5 bg-primary sm:w-4"
                   : "w-1 bg-muted"
               }`}
             />
@@ -78,7 +78,7 @@ export const ReviewNavigation: FC<ReviewNavigationProps> = ({
           <Button
             size="lg"
             onClick={onNext}
-            className="h-10 rounded-none bg-primary px-4 text-[10px] font-black tracking-widest uppercase shadow-2xl shadow-primary/30 transition-all hover:scale-105 active:scale-95 sm:h-11 sm:px-10 sm:text-xs"
+            className="h-8 rounded-none bg-primary px-3 text-[9px] font-black tracking-wider uppercase shadow-2xl shadow-primary/30 transition-all hover:scale-105 active:scale-95 sm:h-11 sm:px-10 sm:text-xs sm:tracking-widest"
           >
             <span className="xs:inline hidden">
               {currentEntrySelectionsCount === 0
@@ -90,7 +90,7 @@ export const ReviewNavigation: FC<ReviewNavigationProps> = ({
             <span className="xs:hidden">
               {currentIndex === entriesCount - 1 ? "End" : "Next"}
             </span>
-            <ChevronRight className="ml-1 h-4 w-4 sm:ml-2" />
+            <ChevronRight className="ml-0.5 h-3.5 w-3.5 sm:ml-2 sm:h-4 sm:w-4" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>

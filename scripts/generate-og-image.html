@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Zenith OG Image</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    :root {
+      --bg: #0c0d0f;
+      --card-bg: rgba(18, 19, 24, 0.92);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --primary: #e11d48;
+      --primary-glow: rgba(225, 29, 72, 0.4);
+      --primary-light: #fb7185;
+      --foreground: #f4f4f5;
+      --muted: #a1a1aa;
+      --subtle: #71717a;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --badge-bg: rgba(255, 255, 255, 0.04);
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.3);
+    }
+
+    body {
+      width: 1200px;
+      height: 630px;
+      overflow: hidden;
+      background-color: var(--bg);
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--foreground);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      padding: 48px 56px;
+    }
+
+    /* Background Grid & Ambient Glows */
+    .grid-bg {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 30px 30px;
+      pointer-events: none;
+    }
+
+    .ambient-glow-1 {
+      position: absolute;
+      top: -100px;
+      right: 120px;
+      width: 650px;
+      height: 650px;
+      background: radial-gradient(circle, rgba(225, 29, 72, 0.24) 0%, rgba(225, 29, 72, 0.06) 50%, transparent 70%);
+      pointer-events: none;
+      filter: blur(45px);
+    }
+
+    .ambient-glow-2 {
+      position: absolute;
+      bottom: -120px;
+      left: 80px;
+      width: 520px;
+      height: 520px;
+      background: radial-gradient(circle, rgba(225, 29, 72, 0.14) 0%, transparent 65%);
+      pointer-events: none;
+      filter: blur(55px);
+    }
+
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 45%, rgba(12, 13, 15, 0.9) 100%);
+      pointer-events: none;
+    }
+
+    /* Top Bar */
+    .topbar {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-container {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-mark {
+      width: 42px;
+      height: 42px;
+      background: rgba(225, 29, 72, 0.14);
+      border: 1px solid rgba(225, 29, 72, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 24px rgba(225, 29, 72, 0.3);
+    }
+
+    .logo-mark svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--primary);
+    }
+
+    .brand-name {
+      font-size: 25px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--primary);
+    }
+
+    .brand-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--primary);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--primary);
+    }
+
+    /* Main Content Area */
+    .main-grid {
+      position: relative;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: 1.12fr 1fr;
+      gap: 40px;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    /* Left Side: Headline & Badges */
+    .left-col {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .hero-title {
+      font-size: 48px;
+      line-height: 1.06;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: #ffffff;
+    }
+
+    .hero-title .highlight {
+      color: var(--primary);
+      text-shadow: 0 0 35px rgba(225, 29, 72, 0.45);
+    }
+
+    .hero-desc {
+      font-size: 16.5px;
+      line-height: 1.48;
+      font-weight: 500;
+      color: var(--muted);
+      max-width: 510px;
+      letter-spacing: -0.01em;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #e4e4e7;
+    }
+
+    .tag.primary {
+      background: rgba(225, 29, 72, 0.12);
+      border-color: rgba(225, 29, 72, 0.35);
+      color: #fda4af;
+    }
+
+    /* Right Side: UI Card Mockup */
+    .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ui-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 
+        0 24px 48px -12px rgba(0, 0, 0, 0.8),
+        0 0 0 1px rgba(255, 255, 255, 0.05),
+        0 0 36px rgba(225, 29, 72, 0.14);
+      backdrop-filter: blur(16px);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Card Stepper Header */
+    .stepper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .step-badge {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10.5px;
+      font-weight: 800;
+    }
+
+    .step-item.past .step-badge {
+      background: rgba(225, 29, 72, 0.15);
+      border: 1px solid rgba(225, 29, 72, 0.4);
+      color: var(--primary);
+    }
+    .step-item.past {
+      color: #e4e4e7;
+    }
+
+    .step-item.active .step-badge {
+      background: var(--primary);
+      border: 1px solid var(--primary);
+      color: #ffffff;
+      box-shadow: 0 0 12px var(--primary-glow);
+    }
+    .step-item.active {
+      color: #ffffff;
+    }
+
+    .step-item.future .step-badge {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--subtle);
+    }
+    .step-item.future {
+      color: var(--subtle);
+    }
+
+    .step-arrow {
+      color: rgba(255, 255, 255, 0.2);
+      font-size: 13px;
+    }
+
+    /* Main Active Anime Match Item */
+    .anime-preview {
+      display: flex;
+      gap: 14px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 12px 14px;
+    }
+
+    .anime-poster {
+      width: 58px;
+      height: 80px;
+      background: linear-gradient(145deg, #1c141d 0%, #2b111e 60%, #151419 100%);
+      border: 1px solid rgba(225, 29, 72, 0.35);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .poster-kanji {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 900;
+      font-size: 18px;
+      color: rgba(225, 29, 72, 0.4);
+      letter-spacing: -0.05em;
+      user-select: none;
+    }
+
+    .poster-tag {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(225, 29, 72, 0.85);
+      font-size: 8px;
+      font-weight: 800;
+      text-align: center;
+      color: #ffffff;
+      padding: 2px 0;
+      letter-spacing: 0.05em;
+    }
+
+    .anime-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .anime-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .anime-title {
+      font-size: 14.5px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .match-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      padding: 2px 6px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      color: #34d399;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+      flex-shrink: 0;
+    }
+
+    .anime-meta {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 1px;
+    }
+
+    .progress-bar-container {
+      margin-top: 4px;
+    }
+
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .progress-track {
+      height: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+      background: linear-gradient(90deg, var(--primary) 0%, #fb7185 100%);
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    /* Secondary Matched Item Row */
+    .secondary-entry {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.018);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 8px 12px;
+      font-size: 11.5px;
+    }
+
+    .sec-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      color: #d4d4d8;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      max-width: 320px;
+    }
+
+    .sec-dot {
+      width: 6px;
+      height: 6px;
+      background: #10b981;
+      flex-shrink: 0;
+    }
+
+    .sec-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    /* Card Bottom Actions */
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 2px;
+    }
+
+    .sync-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #e4e4e7;
+    }
+
+    .check-icon {
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+    }
+
+    .action-btn {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      background: var(--primary);
+      border: none;
+      color: #ffffff;
+      box-shadow: 0 0 16px var(--primary-glow);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Floating Pill Under Card */
+    .floating-pill {
+      background: rgba(18, 19, 24, 0.9);
+      border: 1px solid rgba(225, 29, 72, 0.35);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 700;
+      color: #e4e4e7;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .floating-pill .accent {
+      color: var(--primary-light);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Bottom Bar */
+    .bottombar {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 16px;
+    }
+
+    .domain-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .domain-tag .url {
+      color: #ffffff;
+    }
+
+    .app-features-summary {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+  <div class="vignette"></div>
+
+  <!-- Header -->
+  <div class="topbar">
+    <div class="brand-container">
+      <div class="logo-mark">
+        <svg viewBox="0 0 48.6 70" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 48.6 70 L 0 70 L 0 53.2 L 34.6 13.4 L 34.6 11.8 L 1 11.8 L 1 0 L 48.4 0 L 48.4 16.8 L 13.8 56.6 L 13.8 58.2 L 48.6 58.2 L 48.6 70 Z"/>
+        </svg>
+      </div>
+      <span class="brand-name">Zenith</span>
+    </div>
+
+    <div class="brand-badge">
+      <span class="status-dot"></span>
+      <span>AniList Sync &amp; Management</span>
+    </div>
+  </div>
+
+  <!-- Main Hero Grid -->
+  <div class="main-grid">
+    <!-- Left Column -->
+    <div class="left-col">
+      <h1 class="hero-title">
+        Sync Your <span class="highlight">Offline</span><br>
+        Watch Lists to <span class="highlight">AniList</span>
+      </h1>
+
+      <p class="hero-desc">
+        Import offline watchlists, match series automatically, and streamline your anime collection updates with precision.
+      </p>
+
+      <div class="tag-row">
+        <div class="tag primary">Offline Import</div>
+        <div class="tag primary">Auto Matcher</div>
+        <div class="tag">Batch Sync</div>
+        <div class="tag">Franchise Explorer</div>
+      </div>
+    </div>
+
+    <!-- Right Column: UI Card Preview -->
+    <div class="right-col">
+      <div class="ui-card">
+        <!-- Stepper -->
+        <div class="stepper">
+          <div class="step-item past">
+            <div class="step-badge">✓</div>
+            <span>Import</span>
+          </div>
+          <div class="step-arrow">→</div>
+          <div class="step-item active">
+            <div class="step-badge">2</div>
+            <span>Review</span>
+          </div>
+          <div class="step-arrow">→</div>
+          <div class="step-item future">
+            <div class="step-badge">3</div>
+            <span>Sync</span>
+          </div>
+        </div>
+
+        <!-- Anime Entry Card -->
+        <div class="anime-preview">
+          <div class="anime-poster">
+            <div class="poster-kanji">ZEN</div>
+            <div class="poster-tag">ANIME</div>
+          </div>
+          <div class="anime-info">
+            <div class="anime-header">
+              <span class="anime-title">Frieren: Beyond Journey's End</span>
+              <span class="match-pill">100% MATCH</span>
+            </div>
+            <div class="anime-meta">
+              <span>TV • 28 Episodes</span>
+              <span style="color: var(--subtle)">•</span>
+              <span style="color: #fda4af;">Score: 95/100</span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-labels">
+                <span>PROGRESS</span>
+                <span style="color: var(--primary-light);">28 / 28 EPS</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secondary mini entry -->
+        <div class="secondary-entry">
+          <div class="sec-left">
+            <div class="sec-dot"></div>
+            <span>Dungeon Meshi</span>
+          </div>
+          <div class="sec-meta">24/24 EPS • 100% MATCH</div>
+        </div>
+
+        <!-- Card Footer -->
+        <div class="card-footer">
+          <div class="sync-status">
+            <span class="check-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </span>
+            <span>AniList OAuth Connected</span>
+          </div>
+          <div class="action-btn">
+            <span>Ready to Sync</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick status banner -->
+      <div class="floating-pill">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          <span>GraphQL API Sync Bridge</span>
+        </div>
+        <span class="accent">48 Series Matched</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Bar -->
+  <div class="bottombar">
+    <div class="domain-tag">
+      <span>WEB</span>
+      <span style="color: var(--subtle)">•</span>
+      <span class="url">zenith-anilist.vercel.app</span>
+    </div>
+
+    <div class="app-features-summary">
+      Precise AniList Media Sync &amp; Library Management
+    </div>
+  </div>
+</body>
+</html>

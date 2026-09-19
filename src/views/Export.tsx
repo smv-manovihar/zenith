@@ -270,7 +270,7 @@ export const ExportPanel: FC<ExportPanelProps> = ({
           </div>
         </CardHeader>
         <CardContent>
-          <pre className="scrollbar-thin scrollbar-thumb-primary/10 max-h-[300px] overflow-y-auto rounded-none bg-muted/40 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-foreground/80">
+          <pre className="scrollbar-thin scrollbar-thumb-primary/10 max-h-75 overflow-y-auto rounded-none bg-muted/40 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-foreground/80">
             {numberedList}
           </pre>
         </CardContent>
@@ -323,7 +323,7 @@ export const ExportPanel: FC<ExportPanelProps> = ({
           </div>
         </CardHeader>
         <CardContent>
-          <pre className="scrollbar-thin scrollbar-thumb-primary/10 max-h-[300px] overflow-y-auto rounded-none bg-muted/40 p-4 font-mono text-[10px] leading-relaxed whitespace-pre-wrap text-foreground/60">
+          <pre className="scrollbar-thin scrollbar-thumb-primary/10 max-h-75 overflow-y-auto rounded-none bg-muted/40 p-4 font-mono text-[10px] leading-relaxed whitespace-pre-wrap text-foreground/60">
             {malXml}
           </pre>
         </CardContent>
@@ -344,20 +344,20 @@ const Export: FC = () => {
 
   return (
     <div className="mx-auto w-full max-w-4xl animate-in space-y-8 px-1 pb-24 duration-500 fade-in slide-in-from-bottom-4 sm:px-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         <Button
           variant="ghost"
           size="icon"
-          className="gap-2 rounded-none"
+          className="h-9 w-9 shrink-0 gap-2 rounded-none sm:h-10 sm:w-10"
           onClick={() => navigate(-1)}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h2 className="text-2xl font-black tracking-tight uppercase sm:text-3xl">
+          <h2 className="text-xl font-black tracking-tight uppercase sm:text-2xl md:text-3xl">
             Export
           </h2>
-          <p className="text-xs font-medium text-muted-foreground">
+          <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">
             Export your synced list as a numbered text file or MAL-compatible
             XML.
           </p>

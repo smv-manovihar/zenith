@@ -9,6 +9,10 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/react"
+import { registerServiceWorker } from "@/lib/pwa"
+
+// Register PWA Service Worker
+registerServiceWorker()
 
 const queryClient = new QueryClient()
 
