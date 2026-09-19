@@ -6,7 +6,7 @@ import {
   Navigate,
 } from "react-router-dom"
 import { Navbar } from "./components/Navbar"
-import { useProgress } from "./components/ProgressProvider"
+import { useAuth } from "./components/ProgressProvider"
 import { TooltipProvider } from "./components/ui/tooltip"
 import LoadingScreen from "./components/LoadingScreen"
 // Lazy load views for code splitting
@@ -22,7 +22,7 @@ const Search = lazy(() => import("./views/Search"))
 const LoadingFallback = () => <LoadingScreen message="Loading Zenith" />
 
 function App() {
-  const { token } = useProgress()
+  const { token } = useAuth()
 
   return (
     <TooltipProvider delayDuration={300}>

@@ -15,11 +15,12 @@ import {
   Download,
   Copy,
   List,
-  ArrowLeft,
   SortAsc,
   Check,
   AlertCircle,
 } from "lucide-react"
+import { PageHeader } from "@/components/PageHeader"
+import { HelpBullets, HelpSteps } from "@/components/PageHelp"
 import { toast } from "sonner"
 import { type AniListScoreFormat, formatScoreDisplay } from "@/lib/scoreFormat"
 import { normalizeTitle, cn } from "@/lib/utils"
@@ -207,7 +208,7 @@ export const ExportPanel: FC<ExportPanelProps> = ({
             key={s}
             onClick={() => setSort(s)}
             className={cn(
-              "rounded-none border px-2.5 py-1 text-[10px] font-black tracking-widest uppercase transition-colors",
+              "rounded-none border px-2.5 py-1 text-xs font-black tracking-widest uppercase transition-colors",
               sort === s
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border text-muted-foreground hover:border-primary/30 hover:text-primary"
@@ -218,7 +219,7 @@ export const ExportPanel: FC<ExportPanelProps> = ({
         ))}
         <Badge
           variant="secondary"
-          className="ml-auto rounded-none text-[10px] font-black"
+          className="ml-auto rounded-none text-xs font-black"
         >
           {sortedSelections.length} entries
         </Badge>
@@ -275,7 +276,7 @@ export const ExportPanel: FC<ExportPanelProps> = ({
                 <MyAnimeListLogo className="h-4 w-4 text-primary" />
                 MyAnimeList XML
               </CardTitle>
-              <CardDescription className="mt-0.5 text-[10px]">
+              <CardDescription className="mt-0.5 text-xs">
                 {malCompatible} entries with MAL ID
                 {malMissing > 0 && (
                   <span className="text-amber-500/80">
@@ -313,7 +314,7 @@ export const ExportPanel: FC<ExportPanelProps> = ({
           </div>
         </CardHeader>
         <CardContent>
-          <pre className="scrollbar-thin scrollbar-thumb-primary/10 max-h-75 overflow-y-auto rounded-none bg-muted/40 p-4 font-mono text-[10px] leading-relaxed whitespace-pre-wrap text-foreground/60">
+          <pre className="scrollbar-thin scrollbar-thumb-primary/10 max-h-75 overflow-y-auto rounded-none bg-muted/40 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-foreground/60">
             {malXml}
           </pre>
         </CardContent>
@@ -339,25 +340,43 @@ const Export: FC = () => {
 
   return (
     <div className="mx-auto w-full max-w-4xl animate-in space-y-8 px-1 pb-24 duration-500 fade-in slide-in-from-bottom-4 sm:px-6">
-      <div className="flex items-center gap-3 sm:gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 shrink-0 gap-2 rounded-none sm:h-10 sm:w-10"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h2 className="text-xl font-black tracking-tight uppercase sm:text-2xl md:text-3xl">
-            Export
-          </h2>
-          <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">
-            Export your synced list as a numbered text file or MAL-compatible
-            XML.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Export"
+        description="Export your synced list as a numbered text file or MAL-compatible XML."
+        helpSections={[
+          {
+            title: "About",
+            content: (
+              <p>
+                Export backs up your full AniList anime collection into
+                portable formats: a readable numbered list and a
+                MyAnimeList compatible XML file for importing elsewhere.
+              </p>
+            ),
+          },
+          {
+            title: "What to do",
+            content: (
+              <HelpSteps>
+                <li>We load your full AniList collection automatically.</li>
+                <li>Choose a sort order for the output.</li>
+                <li>Copy the numbered list or download it as a text file.</li>
+                <li>Use the MAL XML section for importing into other trackers.</li>
+              </HelpSteps>
+            ),
+          },
+          {
+            title: "Tips",
+            content: (
+              <HelpBullets>
+                <li>Scores display in your current AniList score format.</li>
+                <li>Entries without a MAL ID are excluded from the XML file.</li>
+                <li>Export is read only. It never changes your AniList.</li>
+              </HelpBullets>
+            ),
+          },
+        ]}
+      />
 
       <ExportPanel fetchFull={true} />
     </div>

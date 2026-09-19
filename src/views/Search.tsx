@@ -22,6 +22,8 @@ import {
 import { toast } from "sonner"
 import { MediaCard } from "@/components/Review/MediaCard"
 import { MediaDetailsDialog } from "@/components/Review/MediaDetailsDialog"
+import { PageHeader } from "@/components/PageHeader"
+import { HelpBullets, HelpSteps } from "@/components/PageHelp"
 import {
   Select,
   SelectContent,
@@ -241,17 +243,57 @@ const Search: FC = () => {
 
   return (
     <div className="mx-auto w-full max-w-6xl animate-in space-y-6 px-1 pb-24 duration-500 fade-in slide-in-from-bottom-4 sm:px-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-black tracking-tight uppercase sm:text-2xl md:text-3xl">
-            Search AniList
-          </h2>
-          <p className="mt-1 max-w-lg text-xs font-medium text-muted-foreground sm:text-sm">
-            Discover and manage your AniList collection directly.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Search AniList"
+        description="Discover and manage your AniList collection directly."
+        backTo="/"
+        helpSections={[
+          {
+            title: "About",
+            content: (
+              <p>
+                Search browses the live AniList anime catalog. Use it to
+                discover new shows, check details, and add titles straight to
+                your AniList collection without leaving Zenith.
+              </p>
+            ),
+          },
+          {
+            title: "What to do",
+            content: (
+              <HelpSteps>
+                <li>Type a title, or leave it blank to browse by filters.</li>
+                <li>
+                  Pick a season, year, format, and sort. Use the studio box to
+                  filter by animation studio.
+                </li>
+                <li>Click a card to view full details.</li>
+                <li>
+                  Press Add on a new title, or update score, status, and
+                  progress on one already in your list.
+                </li>
+                <li>
+                  Use the clear filters button to reset everything back to the
+                  current season.
+                </li>
+              </HelpSteps>
+            ),
+          },
+          {
+            title: "Tips",
+            content: (
+              <HelpBullets>
+                <li>Results load as you scroll. There is no pager.</li>
+                <li>You must be logged in to add or edit list entries.</li>
+                <li>
+                  Studio filtering happens locally on the loaded results, so
+                  keep the main search broad when using it.
+                </li>
+              </HelpBullets>
+            ),
+          },
+        ]}
+      />
 
       <div className="space-y-3 rounded-none border border-border/50 bg-muted/20 p-3">
         {/* Search Bars */}

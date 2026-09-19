@@ -135,7 +135,7 @@ export const EditEntryDialog: FC<EditEntryDialogProps> = ({
               {media.title?.romaji &&
                 media.title?.english &&
                 media.title?.romaji !== media.title?.english && (
-                  <p className="mt-0.5 line-clamp-1 text-[9px] font-bold wrap-break-word text-muted-foreground/60 sm:text-[10px]">
+                  <p className="mt-0.5 line-clamp-1 text-xs font-bold wrap-break-word text-muted-foreground/60">
                     {media.title.romaji}
                   </p>
                 )}
@@ -144,7 +144,7 @@ export const EditEntryDialog: FC<EditEntryDialogProps> = ({
             <div className="w-full space-y-5 pt-1 sm:space-y-6 md:pt-5">
               {/* Status Selection */}
               <div className="w-full space-y-2">
-                <label className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase opacity-70">
+                <label className="text-xs font-black tracking-[0.2em] text-muted-foreground uppercase opacity-70">
                   Update Status
                 </label>
                 <div className="grid w-full grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2">
@@ -168,7 +168,7 @@ export const EditEntryDialog: FC<EditEntryDialogProps> = ({
                             isActive ? cfg.color : "opacity-40"
                           )}
                         />
-                        <span className="truncate text-[9px] font-black tracking-wider uppercase sm:text-[10px] sm:tracking-widest">
+                        <span className="truncate text-xs font-black tracking-wider uppercase sm:tracking-widest">
                           {cfg.label}
                         </span>
                       </button>
@@ -180,7 +180,7 @@ export const EditEntryDialog: FC<EditEntryDialogProps> = ({
               <div className="grid w-full gap-5 sm:grid-cols-2 sm:gap-6">
                 {/* Score */}
                 <div className="w-full space-y-2">
-                  <label className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase opacity-70">
+                  <label className="text-xs font-black tracking-[0.2em] text-muted-foreground uppercase opacity-70">
                     Your Score
                   </label>
                   <div
@@ -199,7 +199,7 @@ export const EditEntryDialog: FC<EditEntryDialogProps> = ({
                       />
                       <span
                         className={cn(
-                          "truncate text-[9px] font-black tracking-wider uppercase sm:text-[10px] sm:tracking-widest",
+                          "truncate text-xs font-black tracking-wider uppercase sm:tracking-widest",
                           getScoreStyles(score, scoreFormat).color
                         )}
                       >
@@ -222,7 +222,7 @@ export const EditEntryDialog: FC<EditEntryDialogProps> = ({
                       />
                       <span
                         className={cn(
-                          "shrink-0 text-[9px] font-black opacity-40 sm:text-[10px]",
+                          "shrink-0 text-xs font-black opacity-60",
                           getScoreStyles(score, scoreFormat).color
                         )}
                       >
@@ -254,7 +254,7 @@ export const EditEntryDialog: FC<EditEntryDialogProps> = ({
 
                     return (
                       <>
-                        <label className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase opacity-70">
+                        <label className="text-xs font-black tracking-[0.2em] text-muted-foreground uppercase opacity-70">
                           Episodes
                         </label>
                         <div
@@ -273,7 +273,7 @@ export const EditEntryDialog: FC<EditEntryDialogProps> = ({
                             />
                             <span
                               className={cn(
-                                "truncate text-[9px] font-black tracking-wider uppercase sm:text-[10px] sm:tracking-widest",
+                                "truncate text-xs font-black tracking-wider uppercase sm:tracking-widest",
                                 progressColor
                               )}
                             >
@@ -295,7 +295,7 @@ export const EditEntryDialog: FC<EditEntryDialogProps> = ({
                             {media.episodes && (
                               <span
                                 className={cn(
-                                  "shrink-0 text-[9px] font-black opacity-40 sm:text-[10px]",
+                                  "shrink-0 text-xs font-black opacity-60",
                                   progressColor
                                 )}
                               >
@@ -315,14 +315,14 @@ export const EditEntryDialog: FC<EditEntryDialogProps> = ({
               <Button
                 variant="outline"
                 size="lg"
-                className="h-11 flex-1 rounded-none border-border/50 text-[9px] font-black tracking-wider uppercase transition-all hover:bg-muted sm:text-[10px] sm:tracking-widest"
+                className="h-11 flex-1 rounded-none border-border/50 text-xs font-black tracking-wider uppercase transition-all hover:bg-muted sm:tracking-widest"
                 onClick={onClose}
               >
                 Discard
               </Button>
               <Button
                 size="lg"
-                className="h-11 flex-2 rounded-none bg-primary text-[9px] font-black tracking-wider uppercase shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] sm:text-[10px] sm:tracking-widest"
+                className="h-11 flex-2 rounded-none bg-primary text-xs font-black tracking-wider uppercase shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] sm:tracking-widest"
                 onClick={handleSave}
                 disabled={saving}
               >

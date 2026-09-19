@@ -16,7 +16,6 @@ import {
   GET_MEDIA_LIST_COLLECTION,
   SAVE_MEDIA_LIST_ENTRY,
   DELETE_MEDIA_LIST_ENTRY,
-  UPDATE_USER_SETTINGS,
 } from "@/lib/anilist"
 import { Button } from "@/components/ui/button"
 import {
@@ -24,6 +23,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { PageHeader } from "@/components/PageHeader"
+import { HelpBullets, HelpSteps } from "@/components/PageHelp"
 import { Input } from "@/components/ui/input"
 import {
   Search,
@@ -35,8 +36,6 @@ import {
   FolderOpen,
   ExternalLink,
   Download,
-  Check,
-  ChevronDown,
   MoreVertical,
   FilterX,
   X,
@@ -46,8 +45,11 @@ import { toast } from "sonner"
 import {
   type AniListScoreFormat,
   formatScoreDisplay,
-  SCORE_FORMAT_OPTIONS,
 } from "@/lib/scoreFormat"
+import {
+  ScoreFormatSelector,
+  useScoreFormat,
+} from "@/components/ScoreFormatSelector"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -184,8 +186,8 @@ const EntryRow: FC<EntryRowProps> = ({
   onStudioClick,
   deleting,
 }) => {
-  const title = entry.media.title.english ?? entry.media.title.romaji
-  const studio = entry.media.studios?.nodes?.find((n) => n.isAnimationStudio)
+    const title = entry.media.title.english ?? entry.media.title.romaji
+    const studio = entry.media.studios?.nodes?.find((n) => n.isAnimationStudio)
 
   return (
     <div className="group flex items-center gap-3 border-b border-border/50 p-3 transition-colors last:border-0 hover:bg-muted/30">
@@ -206,12 +208,12 @@ const EntryRow: FC<EntryRowProps> = ({
 
         {/* Info */}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] leading-tight font-black text-foreground transition-colors group-hover:text-primary">
+          <p className="truncate text-xs leading-tight font-black text-foreground transition-colors group-hover:text-primary sm:text-sm">
             {title}
           </p>
           {studio && (
             <p
-              className="mt-0.5 inline-block cursor-pointer text-[10px] font-bold text-muted-foreground/70 transition-colors hover:text-primary"
+              className="mt-0.5 inline-block cursor-pointer text-xs font-bold text-muted-foreground/70 transition-colors hover:text-primary"
               onClick={(e) => {
                 e.stopPropagation()
                 onStudioClick(studio.name)
@@ -223,7 +225,7 @@ const EntryRow: FC<EntryRowProps> = ({
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <span
               className={cn(
-                "border px-1.5 py-0 text-[9px] font-black tracking-widest uppercase transition-all",
+                "border px-1.5 py-0 text-xs font-black tracking-widest uppercase transition-all",
                 LIST_STATUS_COLORS[entry.status] ||
                   "border-primary/20 bg-primary/10 text-primary"
               )}
@@ -232,12 +234,12 @@ const EntryRow: FC<EntryRowProps> = ({
             </span>
 
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-black text-foreground">
+              <span className="text-xs font-black text-foreground">
                 {formatScoreDisplay(entry.score, scoreFormat)}
               </span>
-              <span className="text-[10px] text-muted-foreground/30">|</span>
+              <span className="text-xs text-muted-foreground/30">|</span>
               {entry.media.episodes && (
-                <span className="text-[10px] font-bold text-muted-foreground/70">
+                <span className="text-xs font-bold text-muted-foreground/70">
                   {entry.progress} / {entry.media.episodes} eps
                 </span>
               )}
@@ -249,7 +251,7 @@ const EntryRow: FC<EntryRowProps> = ({
               {entry.media.genres.slice(0, 3).map((g) => (
                 <span
                   key={g}
-                  className="rounded-none border border-primary/10 bg-primary/5 px-1.5 py-px text-[9px] font-bold text-primary/70"
+                  className="rounded-none border border-primary/10 bg-primary/5 px-1.5 py-px text-xs font-bold text-primary/70"
                 >
                   {g}
                 </span>
@@ -392,10 +394,13 @@ const ListManagement: FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const initialTab = searchParams.get("status") || "ALL"
 
-  const serverScoreFormat =
-    (user?.scoreFormat as AniListScoreFormat) ?? "POINT_10_DECIMAL"
-  const [localScoreFormat, setLocalScoreFormat] =
-    useState<AniListScoreFormat>(serverScoreFormat)
+  const {
+    value: localScoreFormat,
+    setValue: setLocalScoreFormat,
+    serverValue: serverScoreFormat,
+    isApplying: isUpdatingFormat,
+    apply: handleScoreFormatUpdate,
+  } = useScoreFormat()
 
   const [lists, setLists] = useState<ListGroup[]>([])
   const [loading, setLoading] = useState(false)
@@ -409,8 +414,6 @@ const ListManagement: FC = () => {
   const [deleteConfirmEntry, setDeleteConfirmEntry] =
     useState<ListEntry | null>(null)
   const [fetched, setFetched] = useState(false)
-  const [isUpdatingFormat, setIsUpdatingFormat] = useState(false)
-  const { setUser } = useProgress()
 
   const [season, setSeason] = useState<string>("ALL")
   const [seasonYear, setSeasonYear] = useState<string>("ALL")
@@ -433,11 +436,6 @@ const ListManagement: FC = () => {
     setDebouncedSearch("")
   }
 
-  // Sync local format when server format changes
-  useEffect(() => {
-    setLocalScoreFormat(serverScoreFormat)
-  }, [serverScoreFormat])
-
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -451,36 +449,6 @@ const ListManagement: FC = () => {
       navigate("/")
     }
   }, [token, navigate])
-
-  const handleScoreFormatChange = (newFormat: AniListScoreFormat) => {
-    setLocalScoreFormat(newFormat)
-  }
-
-  const handleScoreFormatUpdate = async () => {
-    if (!token || !user || localScoreFormat === serverScoreFormat) return
-    setIsUpdatingFormat(true)
-    try {
-      await queryAniList(
-        UPDATE_USER_SETTINGS,
-        { scoreFormat: localScoreFormat },
-        token
-      )
-      toast.success(`Score format updated to ${localScoreFormat} on AniList`)
-      setUser({
-        ...user,
-        scoreFormat: localScoreFormat,
-        mediaListOptions: {
-          ...user.mediaListOptions,
-          scoreFormat: localScoreFormat,
-        },
-      })
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err)
-      toast.error("Failed to update settings: " + message)
-    } finally {
-      setIsUpdatingFormat(false)
-    }
-  }
 
   const fetchList = useCallback(async () => {
     if (!user || !user.id) return
@@ -726,105 +694,96 @@ const ListManagement: FC = () => {
 
   return (
     <div className="mx-auto w-full max-w-5xl animate-in space-y-6 px-1 pb-24 duration-500 fade-in slide-in-from-bottom-4 sm:px-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
-          <div>
-            <h2 className="text-xl font-black tracking-tight uppercase sm:text-2xl md:text-3xl">
-              My AniList
-            </h2>
-            <div className="flex items-center gap-2">
-              <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">
-                {error
-                  ? "Error loading list"
-                  : fetched
-                    ? `${totalCount} entries`
-                    : "Loading your list…"}
+      <PageHeader
+        title="My AniList"
+        description={
+          error
+            ? "Error loading list"
+            : fetched
+              ? `${totalCount} entries`
+              : "Loading your list…"
+        }
+        backTo="/"
+        helpSections={[
+          {
+            title: "About",
+            content: (
+              <p>
+                My AniList is a direct view of your live AniList anime
+                collection. Browse every entry by status, search and filter
+                it, and edit scores, progress, or list placement without
+                opening AniList itself.
               </p>
-            </div>
-          </div>
-        </div>
-        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-nowrap sm:items-center">
-          <div className="col-span-2 flex items-center gap-1 sm:col-auto">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild disabled={isUpdatingFormat}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    "w-full justify-between gap-2 rounded-none border-primary/20 bg-primary/5 text-[10px] font-black tracking-widest text-primary uppercase transition-all hover:border-primary/40 hover:bg-primary/10 sm:w-auto",
-                    isUpdatingFormat && "cursor-not-allowed opacity-50"
-                  )}
-                >
-                  <span className="text-[8px] font-black tracking-[0.2em] text-muted-foreground/60 uppercase">
-                    Format:
-                  </span>
-                  {isUpdatingFormat ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    (SCORE_FORMAT_OPTIONS.find(
-                      (o) => o.value === localScoreFormat
-                    )?.label.split(" (")[0] ?? localScoreFormat)
-                  )}
-                  <ChevronDown className="h-3 w-3 opacity-40 transition-transform group-hover:translate-y-0.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="rounded-none">
-                <div className="px-2 py-1.5 text-[9px] font-black tracking-[0.2em] text-muted-foreground/60 uppercase">
-                  AniList Score Format
-                </div>
-                {SCORE_FORMAT_OPTIONS.map((opt) => (
-                  <DropdownMenuItem
-                    key={opt.value}
-                    onClick={() => handleScoreFormatChange(opt.value)}
-                    className={cn(
-                      "cursor-pointer text-[11px] font-bold",
-                      opt.value === localScoreFormat && "text-primary"
-                    )}
-                  >
-                    {opt.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {localScoreFormat !== serverScoreFormat && (
-              <Button
-                size="sm"
-                className="h-7 w-7 shrink-0 animate-in rounded-none bg-emerald-500 p-0 text-white shadow-lg shadow-emerald-500/20 zoom-in-95 fade-in hover:bg-emerald-600"
-                onClick={handleScoreFormatUpdate}
-                disabled={isUpdatingFormat}
-                title="Save score format to AniList"
-              >
-                {isUpdatingFormat ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Check className="h-3.5 w-3.5" />
-                )}
-              </Button>
-            )}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full gap-2 rounded-none sm:w-auto"
-            onClick={() => navigate("/export")}
-          >
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full gap-2 rounded-none sm:w-auto"
-            onClick={() => fetchList()}
-            disabled={loading}
-          >
-            <RefreshCcw className={cn("h-4 w-4", loading && "animate-spin")} />
-            Refresh
-          </Button>
-        </div>
-      </div>
+            ),
+          },
+          {
+            title: "What to do",
+            content: (
+              <HelpSteps>
+                <li>Pick a status tab, or stay on All for everything.</li>
+                <li>Search, filter, and sort to find entries.</li>
+                <li>Click a row for full details.</li>
+                <li>Use Edit to change score, status, and progress.</li>
+                <li>Use Export or Refresh from the header actions.</li>
+              </HelpSteps>
+            ),
+          },
+          {
+            title: "Tips",
+            content: (
+              <div className="space-y-3">
+                <p>
+                  The picker changes how scores display here. If it differs
+                  from your AniList setting, press Save to AniList to update
+                  your account.
+                </p>
+                <HelpBullets>
+                  <li>
+                    Edits save straight to AniList. There is no draft mode.
+                  </li>
+                  <li>
+                    Removing an entry is permanent and asks for confirmation.
+                  </li>
+                  <li>
+                    Clicking a studio name filters the list to that studio.
+                  </li>
+                </HelpBullets>
+              </div>
+            ),
+          },
+        ]}
+        actions={
+          <>
+            <ScoreFormatSelector
+              value={localScoreFormat}
+              onChange={setLocalScoreFormat}
+              serverValue={serverScoreFormat}
+              onApply={handleScoreFormatUpdate}
+              isApplying={isUpdatingFormat}
+              align="end"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 rounded-none"
+              onClick={() => navigate("/export")}
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 rounded-none"
+              onClick={() => fetchList()}
+              disabled={loading}
+            >
+              <RefreshCcw className={cn("h-4 w-4", loading && "animate-spin")} />
+              Refresh
+            </Button>
+          </>
+        }
+      />
 
       {loading && !fetched && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -896,7 +855,7 @@ const ListManagement: FC = () => {
                   {count > 0 && (
                     <span
                       className={cn(
-                        "text-[9px]",
+                        "text-xs",
                         activeTab === tab.key
                           ? "text-primary/70"
                           : "text-muted-foreground/50"
@@ -918,19 +877,19 @@ const ListManagement: FC = () => {
                 placeholder={`Search ${STATUS_LABELS[activeTab] ?? ""} entries…`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-9 rounded-none border-primary/20 bg-background/50 pl-9 text-[11px] font-semibold transition-colors focus-visible:border-primary/50 focus-visible:ring-0"
+                className="h-9 rounded-none border-primary/20 bg-background/50 pl-9 text-xs font-semibold transition-colors focus-visible:border-primary/50 focus-visible:ring-0"
               />
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
               <Select value={season} onValueChange={setSeason}>
-                <SelectTrigger className="h-9 w-28 rounded-none text-[10px] font-bold tracking-wider uppercase">
+                <SelectTrigger className="h-9 w-28 rounded-none text-xs font-bold tracking-wider uppercase">
                   <SelectValue placeholder="Season" />
                 </SelectTrigger>
                 <SelectContent className="rounded-none">
                   <SelectItem
                     value="ALL"
-                    className="text-[10px] font-bold uppercase"
+                    className="text-xs font-bold uppercase"
                   >
                     All Seasons
                   </SelectItem>
@@ -938,7 +897,7 @@ const ListManagement: FC = () => {
                     <SelectItem
                       key={s}
                       value={s}
-                      className="text-[10px] font-bold uppercase"
+                      className="text-xs font-bold uppercase"
                     >
                       {s.charAt(0) + s.slice(1).toLowerCase()}
                     </SelectItem>
@@ -947,13 +906,13 @@ const ListManagement: FC = () => {
               </Select>
 
               <Select value={seasonYear} onValueChange={setSeasonYear}>
-                <SelectTrigger className="h-9 w-24 rounded-none text-[10px] font-bold tracking-wider uppercase">
+                <SelectTrigger className="h-9 w-24 rounded-none text-xs font-bold tracking-wider uppercase">
                   <SelectValue placeholder="Year" />
                 </SelectTrigger>
                 <SelectContent className="rounded-none">
                   <SelectItem
                     value="ALL"
-                    className="text-[10px] font-bold uppercase"
+                    className="text-xs font-bold uppercase"
                   >
                     All Years
                   </SelectItem>
@@ -961,7 +920,7 @@ const ListManagement: FC = () => {
                     <SelectItem
                       key={y}
                       value={y}
-                      className="text-[10px] font-bold uppercase"
+                      className="text-xs font-bold uppercase"
                     >
                       {y}
                     </SelectItem>
@@ -970,13 +929,13 @@ const ListManagement: FC = () => {
               </Select>
 
               <Select value={format} onValueChange={setFormat}>
-                <SelectTrigger className="h-9 w-auto min-w-25 rounded-none text-[10px] font-bold tracking-wider uppercase">
+                <SelectTrigger className="h-9 w-auto min-w-25 rounded-none text-xs font-bold tracking-wider uppercase">
                   <SelectValue placeholder="Format" />
                 </SelectTrigger>
                 <SelectContent className="rounded-none">
                   <SelectItem
                     value="ALL"
-                    className="text-[10px] font-bold uppercase"
+                    className="text-xs font-bold uppercase"
                   >
                     All Formats
                   </SelectItem>
@@ -984,7 +943,7 @@ const ListManagement: FC = () => {
                     <SelectItem
                       key={f}
                       value={f}
-                      className="text-[10px] font-bold uppercase"
+                      className="text-xs font-bold uppercase"
                     >
                       {f.replace("_", " ")}
                     </SelectItem>
@@ -993,7 +952,7 @@ const ListManagement: FC = () => {
               </Select>
 
               <Select value={sort} onValueChange={setSort}>
-                <SelectTrigger className="h-9 w-40 rounded-none text-[10px] font-bold tracking-wider uppercase">
+                <SelectTrigger className="h-9 w-40 rounded-none text-xs font-bold tracking-wider uppercase">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
                 <SelectContent className="rounded-none">
@@ -1001,7 +960,7 @@ const ListManagement: FC = () => {
                     <SelectItem
                       key={s.value}
                       value={s.value}
-                      className="text-[10px] font-bold uppercase"
+                      className="text-xs font-bold uppercase"
                     >
                       {s.label}
                     </SelectItem>
@@ -1023,12 +982,12 @@ const ListManagement: FC = () => {
             {/* Active Filters Display */}
             {studio !== "ALL" && (
               <div className="flex animate-in items-center gap-2 border-x border-b border-border/50 bg-primary/5 px-3 py-2 duration-300 fade-in slide-in-from-top-1">
-                <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-60">
+                <span className="text-xs font-black tracking-widest text-muted-foreground uppercase opacity-60">
                   Studio:
                 </span>
                 <div className="flex items-center gap-1.5 rounded-none border border-primary/30 bg-background px-2 py-1 shadow-xs">
                   <Building2 className="h-3 w-3 text-primary" />
-                  <span className="text-[11px] font-black text-primary uppercase">
+                  <span className="text-xs font-black text-primary uppercase">
                     {studio}
                   </span>
                   <button
@@ -1050,7 +1009,7 @@ const ListManagement: FC = () => {
             {loading && filteredEntries.length === 0 ? (
               <div className="flex min-h-100 flex-col items-center justify-center py-20 text-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary/40" />
-                <p className="mt-4 text-[10px] font-black tracking-widest text-muted-foreground uppercase opacity-40">
+                <p className="mt-4 text-xs font-black tracking-widest text-muted-foreground uppercase opacity-40">
                   Fetching entries...
                 </p>
               </div>
@@ -1209,14 +1168,14 @@ const ListManagement: FC = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 gap-2">
-            <AlertDialogCancel className="h-9 rounded-none border-border/50 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-muted">
+            <AlertDialogCancel className="h-9 rounded-none border-border/50 text-xs font-black tracking-widest uppercase transition-all hover:bg-muted">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() =>
                 deleteConfirmEntry && handleDelete(deleteConfirmEntry)
               }
-              className="text-destructive-foreground h-9 rounded-none bg-destructive text-[10px] font-black tracking-widest uppercase shadow-lg shadow-destructive/20 transition-all hover:scale-[1.02] hover:bg-destructive/90"
+              className="text-destructive-foreground h-9 rounded-none bg-destructive text-xs font-black tracking-widest uppercase shadow-lg shadow-destructive/20 transition-all hover:scale-[1.02] hover:bg-destructive/90"
             >
               Remove Entry
             </AlertDialogAction>

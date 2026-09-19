@@ -16,12 +16,12 @@ type RateLimitListener = (info: RateLimitInfo) => void;
 
 /**
  * Global Dynamic Rate Limit Manager
- * Dynamically adapts to AniList's changing rate limits (standard 90/min or degraded 30-60/min),
+ * Dynamically adapts to AniList's changing rate limits (degraded 30/min or standard 90/min),
  * calculating optimal request pacing based on real-time response headers.
  */
 class RateLimitManager {
-  limit: number = 90;
-  remaining: number = 90;
+  limit: number = 30;
+  remaining: number = 30;
   resetAt: number = Math.floor(Date.now() / 1000) + 60; 
   retryAfter: number = 0;
   private listeners: Set<RateLimitListener> = new Set();

@@ -153,6 +153,36 @@
   input[type=number] {
     -moz-appearance: textfield;
   }
+
+  /* Interactive Cursor Styles */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]):not(:disabled),
+  [role="tab"]:not([aria-disabled="true"]):not(:disabled),
+  [role="menuitem"]:not([aria-disabled="true"]):not(:disabled),
+  [role="menuitemcheckbox"]:not([aria-disabled="true"]):not(:disabled),
+  [role="menuitemradio"]:not([aria-disabled="true"]):not(:disabled),
+  [role="option"]:not([aria-disabled="true"]):not(:disabled),
+  [role="combobox"]:not([aria-disabled="true"]):not(:disabled),
+  [role="checkbox"]:not([aria-disabled="true"]):not(:disabled),
+  [role="switch"]:not([aria-disabled="true"]):not(:disabled),
+  [role="radio"]:not([aria-disabled="true"]):not(:disabled),
+  [role="slider"]:not([aria-disabled="true"]):not(:disabled),
+  summary,
+  a[href],
+  select:not(:disabled),
+  [data-slot="button"]:not(:disabled),
+  [data-slot$="-trigger"]:not([data-disabled]):not([disabled]),
+  [data-slot$="-item"]:not([data-disabled="true"]):not([aria-disabled="true"]),
+  [data-slot$="-close"]:not(:disabled),
+  [data-slot="checkbox"]:not([data-disabled]),
+  [data-slot="switch"]:not([data-disabled]),
+  [data-slot="toggle"]:not([data-disabled]),
+  [data-slot="toggle-group-item"]:not([data-disabled]),
+  [data-slot="radio-group-item"]:not([data-disabled]),
+  [data-slot="slider-thumb"],
+  [data-slot="pagination-link"] {
+    cursor: pointer;
+  }
 }
 @layer utilities {
   .glass {

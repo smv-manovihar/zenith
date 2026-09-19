@@ -169,6 +169,15 @@ export async function initAndMigrateStorage(): Promise<{ entries?: any[] }> {
   }
 }
 
+export interface SyncSessionRecord {
+  id: string
+  timestamp: number
+  successCount: number
+  errorCount: number
+  totalCount: number
+  errors?: { title: string; message: string }[]
+}
+
 export const Storage = {
   // Entries
   getEntries: (): string | null => {
@@ -272,12 +281,17 @@ export const Storage = {
   },
 
   // Sync History
-  getSyncHistory: async <T = any>(): Promise<T | null> => {
-    const data = await idbGet<T>(STORAGE_KEYS.SYNC_HISTORY)
-    return data ?? null
+  getSyncHistorySessions: async (): Promise<SyncSessionRecord[]> => {
+    const data = await idbGet<SyncSessionRecord[]>(STORAGE_KEYS.SYNC_HISTORY)
+    return Array.isArray(data) ? data : []
   },
-  setSyncHistory: async (history: any): Promise<void> => {
-    await idbSet(STORAGE_KEYS.SYNC_HISTORY, history)
+  addSyncSessionRecord: async (record: SyncSessionRecord): Promise<void> => {
+    const current = (await idbGet<SyncSessionRecord[]>(STORAGE_KEYS.SYNC_HISTORY)) || []
+    const updated = [record, ...(Array.isArray(current) ? current : [])].slice(0, 30)
+    await idbSet(STORAGE_KEYS.SYNC_HISTORY, updated)
+  },
+  clearSyncHistory: async (): Promise<void> => {
+    await idbDelete(STORAGE_KEYS.SYNC_HISTORY)
   },
 
   // Clear all data

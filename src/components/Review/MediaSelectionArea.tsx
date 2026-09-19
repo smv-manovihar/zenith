@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, type FC } from "react"
+import { useState, useEffect, useCallback, useRef, useMemo, type FC } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -7,7 +7,7 @@ import {
   Star,
   AlertCircle,
   Sparkles,
-  CheckSquare,
+  CheckCheck,
   RotateCcw,
   Tv,
   Clapperboard,
@@ -96,23 +96,31 @@ const FilterButton: FC<FilterButtonProps> = ({
 }) => {
   const Icon = format.icon
   return (
-    <Button
-      variant={isActive ? "default" : "outline"}
-      size="sm"
-      onClick={onClick}
-      className={cn(
-        "h-10 gap-2 rounded-none border-primary/20 font-black tracking-tight uppercase transition-all duration-300",
-        isActive
-          ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
-          : "bg-background hover:border-primary/40 hover:bg-primary/5",
-        className
-      )}
-    >
-      <Icon
-        className={cn("h-3.5 w-3.5", isActive ? "opacity-100" : "opacity-50")}
-      />
-      {format.label}
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant={isActive ? "default" : "outline"}
+          size="sm"
+          onClick={onClick}
+          className={cn(
+            "h-10 gap-2 rounded-none border-primary/20 font-black tracking-tight uppercase transition-all duration-300",
+            isActive
+              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+              : "bg-background hover:border-primary/40 hover:bg-primary/5",
+            className
+          )}
+        >
+          <Icon
+            className={cn(
+              "h-3.5 w-3.5",
+              isActive ? "opacity-100" : "opacity-50"
+            )}
+          />
+          {format.label}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Filter by {format.label}</TooltipContent>
+    </Tooltip>
   )
 }
 
@@ -462,42 +470,49 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
     })
   }, [])
 
+  const selectionsMap = useMemo(() => {
+    const map = new Map<number, any>()
+    for (const s of currentEntry?.selections || []) {
+      map.set(s.id, s)
+    }
+    return map
+  }, [currentEntry?.selections])
+
   const isMediaSelected = useCallback(
-    (mediaId: number) =>
-      currentEntry.selections.some((s: any) => s.id === mediaId),
-    [currentEntry.selections]
+    (mediaId: number) => selectionsMap.has(mediaId),
+    [selectionsMap]
   )
 
   const getMediaRating = useCallback(
     (mediaId: number) => {
-      const sel = currentEntry.selections.find((s: any) => s.id === mediaId)
-      return sel ? sel.rating : currentEntry.rating
+      const sel = selectionsMap.get(mediaId)
+      return sel ? sel.rating : currentEntry?.rating ?? 0
     },
-    [currentEntry.selections, currentEntry.rating]
+    [selectionsMap, currentEntry?.rating]
   )
 
   const getMediaStatus = useCallback(
     (mediaId: number) => {
-      const sel = currentEntry.selections.find((s: any) => s.id === mediaId)
+      const sel = selectionsMap.get(mediaId)
       return sel ? sel.anilistStatus : "COMPLETED"
     },
-    [currentEntry.selections]
+    [selectionsMap]
   )
 
   const getMediaProgress = useCallback(
     (mediaId: number) => {
-      const sel = currentEntry.selections.find((s: any) => s.id === mediaId)
+      const sel = selectionsMap.get(mediaId)
       return sel ? sel.progress : 0
     },
-    [currentEntry.selections]
+    [selectionsMap]
   )
 
   const getMediaTotalEpisodes = useCallback(
     (mediaId: number) => {
-      const sel = currentEntry.selections.find((s: any) => s.id === mediaId)
+      const sel = selectionsMap.get(mediaId)
       return sel ? sel.totalEpisodes : null
     },
-    [currentEntry.selections]
+    [selectionsMap]
   )
 
   return (
@@ -573,7 +588,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
               )}
             </div>
 
-            <p className="font-mono text-[10px] tracking-widest break-all text-muted-foreground uppercase opacity-70 sm:text-xs">
+            <p className="font-mono text-xs tracking-widest break-all text-muted-foreground uppercase opacity-70">
               Source: {currentEntry.originalLine}
             </p>
           </div>
@@ -588,11 +603,6 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
           <div className="flex shrink-0 items-center sm:flex-col sm:items-end">
             <div className="flex items-center gap-2 rounded-none border border-primary/20 bg-primary/10 px-3 py-1.5 sm:px-4 sm:py-2">
               <Star className="h-3.5 w-3.5 fill-primary text-primary" />
-              {/*
-                Typography fix:
-                - Was text-[10px] sm:text-xs — inconsistent, overly small on mobile
-                - Now text-xs everywhere (12px) — minimum for a legible label
-              */}
               <span className="text-xs font-black tracking-widest text-primary uppercase">
                 Score
               </span>
@@ -644,7 +654,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
             {/* Sort Filter */}
             <div className="flex items-center gap-2">
               <Select value={sort} onValueChange={setSort}>
-                <SelectTrigger className="h-10 w-[140px] rounded-none border-primary/20 bg-background font-black tracking-tight uppercase">
+                <SelectTrigger className="h-10 w-35 rounded-none border-primary/20 bg-background font-black tracking-tight uppercase">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
                 <SelectContent className="rounded-none border-primary/20 bg-background font-black uppercase shadow-2xl">
@@ -707,12 +717,12 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
                         <div className="flex items-center gap-1.5">
                           <Badge
                             variant="secondary"
-                            className="h-5 min-w-[20px] justify-center rounded-none border-primary/20 bg-primary/10 px-1 text-[10px] font-black text-primary"
+                            className="h-5 min-w-5 justify-center rounded-none border-primary/20 bg-primary/10 px-1 text-xs font-black text-primary"
                           >
                             {(sort !== "POPULARITY_DESC" ? 1 : 0) +
                               selectedFormats.length}
                           </Badge>
-                          <span className="text-[10px] font-bold text-primary/70 uppercase">
+                          <span className="text-xs font-bold text-primary/70 uppercase">
                             Filters
                           </span>
                         </div>
@@ -745,7 +755,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
                       {selectedFormats.length > 0 && (
                         <Button
                           variant="link"
-                          className="h-auto p-0 text-[10px] font-black text-primary uppercase"
+                          className="h-auto p-0 text-xs font-black text-primary uppercase"
                           onClick={() => setSelectedFormats([])}
                         >
                           Reset
@@ -827,7 +837,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 w-9 gap-2 rounded-none border-primary/30 p-0 font-black tracking-tighter text-primary uppercase hover:bg-primary/10 sm:w-auto sm:px-3"
+                className="h-9 w-9 gap-2 rounded-none border-primary/30 p-0 font-black tracking-tighter text-primary uppercase hover:bg-primary/10 hover:text-primary sm:w-auto sm:px-3"
                 onClick={handleAutoSelect}
                 disabled={isLoading || searchResults.length === 0}
               >
@@ -845,11 +855,11 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 w-9 gap-2 rounded-none border-emerald-500/30 p-0 font-black tracking-tighter text-emerald-600 uppercase hover:bg-emerald-500/10 sm:w-auto sm:px-3 dark:text-emerald-400"
+                className="h-9 w-9 gap-2 rounded-none border-emerald-500/30 p-0 font-black tracking-tighter text-emerald-600 uppercase hover:bg-emerald-500/10 hover:text-emerald-600 sm:w-auto sm:px-3 dark:text-emerald-400 dark:hover:text-emerald-400"
                 onClick={handleSelectAll}
                 disabled={isLoading || searchResults.length === 0}
               >
-                <CheckSquare className="h-3.5 w-3.5" />
+                <CheckCheck className="h-3.5 w-3.5" />
                 <span className="hidden text-xs whitespace-nowrap sm:inline sm:text-sm">
                   Select All
                 </span>
@@ -864,7 +874,7 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-9 w-9 gap-2 rounded-none border-destructive/30 p-0 font-black tracking-tighter text-destructive uppercase hover:bg-destructive/10 sm:w-auto sm:px-3"
+                  className="h-9 w-9 gap-2 rounded-none border-destructive/30 p-0 font-black tracking-tighter text-destructive uppercase hover:bg-destructive/10 hover:text-destructive sm:w-auto sm:px-3"
                   onClick={handleClearAll}
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
@@ -876,9 +886,16 @@ export const MediaSelectionArea: FC<MediaSelectionAreaProps> = ({
               <TooltipContent>Clear All Selections</TooltipContent>
             </Tooltip>
             {currentEntry.selections.length > 0 && (
-              <Badge className="h-9 rounded-none border border-primary/20 bg-primary/5 px-3 text-sm font-black text-primary shadow-none sm:px-4">
-                {currentEntry.selections.length}
-              </Badge>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge className="h-9 rounded-none border border-primary/20 bg-primary/5 px-3 text-sm font-black text-primary shadow-none sm:px-4">
+                    {currentEntry.selections.length}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {currentEntry.selections.length} media selected
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
         </div>

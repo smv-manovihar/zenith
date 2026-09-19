@@ -24,6 +24,7 @@ import {
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { Badge } from "@/components/ui/badge"
+import LandingParticles from "@/components/LandingParticles"
 
 const Home: React.FC = () => {
   const { clientId, token, entries } = useProgress()
@@ -45,11 +46,15 @@ const Home: React.FC = () => {
 
   const isConfigMissing = !clientId
   const isLocal =
+    import.meta.env.DEV ||
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1"
 
   return (
-    <div className="mx-auto max-w-5xl animate-in space-y-16 px-1 py-12 duration-1000 fade-in">
+    <div className="relative mx-auto max-w-5xl animate-in px-1 py-12 duration-1000 fade-in">
+      <LandingParticles />
+
+      <div className="relative z-10 space-y-16">
       {/* Hero Section */}
       <div className="space-y-8 text-center">
         <div className="space-y-4">
@@ -196,13 +201,13 @@ const Home: React.FC = () => {
                     <code className="mt-2 block w-fit rounded-none bg-muted px-2 py-1 text-xs font-bold text-primary">
                       http://localhost:5173/callback
                     </code>
-                    <span className="mt-1 block text-[10px] font-bold tracking-tighter text-muted-foreground uppercase">
+                    <span className="mt-1 block text-xs font-bold text-muted-foreground uppercase">
                       Or for production:
                     </span>
                     <code className="mt-1 block w-fit rounded-none bg-muted px-2 py-1 font-mono text-xs text-primary">
                       https://&lt;your-domain&gt;/callback
                     </code>
-                    <span className="mt-1 block text-[10px] font-black tracking-tighter text-destructive uppercase">
+                    <span className="mt-1 block text-xs font-black text-destructive uppercase">
                       Important: Must include http:// or https:// protocol
                     </span>
                   </p>
@@ -302,7 +307,7 @@ VITE_ANILIST_CLIENT_ID = YOUR_CLIENT_ID
         ].map((f, i) => (
           <div
             key={i}
-            className="group rounded-none border bg-card/20 p-6 transition-all hover:bg-card/40 hover:shadow-2xl hover:shadow-primary/5 sm:p-8"
+            className="group rounded-none border bg-card/70 p-6 backdrop-blur-sm transition-all hover:bg-card/90 hover:shadow-2xl hover:shadow-primary/5 sm:p-8"
           >
             <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-none bg-primary/10 text-primary transition-transform group-hover:scale-110 group-hover:rotate-3 sm:mb-6 sm:h-12 sm:w-12">
               {f.icon}
@@ -313,6 +318,7 @@ VITE_ANILIST_CLIENT_ID = YOUR_CLIENT_ID
             </p>
           </div>
         ))}
+      </div>
       </div>
     </div>
   )

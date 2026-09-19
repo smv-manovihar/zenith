@@ -43,7 +43,7 @@ export const ReviewNavigation: FC<ReviewNavigationProps> = ({
             size="sm"
             onClick={onPrev}
             disabled={currentIndex === 0}
-            className="h-8 rounded-none px-2.5 text-[9px] font-black tracking-wider uppercase hover:bg-muted sm:h-11 sm:px-6 sm:text-xs sm:tracking-widest"
+            className="h-10 rounded-none px-3 text-xs font-black tracking-wider uppercase hover:bg-muted sm:h-11 sm:px-6 sm:tracking-widest"
           >
             <ChevronLeft className="mr-0.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
             <span className="xs:inline hidden">Back</span>
@@ -54,7 +54,7 @@ export const ReviewNavigation: FC<ReviewNavigationProps> = ({
       </Tooltip>
 
       <div className="flex flex-col items-center">
-        <p className="text-[7px] font-black tracking-[0.25em] text-muted-foreground uppercase opacity-40 sm:text-[10px] sm:tracking-[0.4em]">
+        <p className="text-xs font-black tracking-[0.2em] text-muted-foreground uppercase opacity-60">
           #{currentIndex + 1}
         </p>
         <div className="mt-0.5 flex gap-1 sm:mt-1 sm:gap-1.5">
@@ -78,7 +78,7 @@ export const ReviewNavigation: FC<ReviewNavigationProps> = ({
           <Button
             size="lg"
             onClick={onNext}
-            className="h-8 rounded-none bg-primary px-3 text-[9px] font-black tracking-wider uppercase shadow-2xl shadow-primary/30 transition-all hover:scale-105 active:scale-95 sm:h-11 sm:px-10 sm:text-xs sm:tracking-widest"
+            className="h-10 rounded-none bg-primary px-4 text-xs font-black tracking-wider uppercase shadow-2xl shadow-primary/30 transition-all hover:scale-105 active:scale-95 sm:h-11 sm:px-10 sm:tracking-widest"
           >
             <span className="xs:inline hidden">
               {currentEntrySelectionsCount === 0

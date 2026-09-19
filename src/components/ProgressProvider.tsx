@@ -62,7 +62,20 @@ export interface AnimeEntry {
   error?: string
 }
 
-interface ProgressContextType {
+// ── Auth Context ─────────────────────────────────────────────────────────────
+export interface AuthContextType {
+  token: string | null
+  setToken: (token: string | null) => void
+  user: UserData | null
+  setUser: (user: UserData | null) => void
+  clientId: string
+  handleLogout: () => void
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+// ── Entries Context ──────────────────────────────────────────────────────────
+export interface EntriesContextType {
   entries: AnimeEntry[]
   setEntries: (entries: AnimeEntry[]) => void
   updateEntry: (index: number, updates: Partial<AnimeEntry>) => void
@@ -71,18 +84,12 @@ interface ProgressContextType {
     selectionIndex: number,
     updates: Partial<Selection>
   ) => void
-  token: string | null
-  setToken: (token: string | null) => void
   lastVisitedIndex: number
   setLastVisitedIndex: (index: number) => void
-  user: UserData | null
-  setUser: (user: UserData | null) => void
-  clientId: string
+  isStorageReady: boolean
 }
 
-const ProgressContext = createContext<ProgressContextType | undefined>(
-  undefined
-)
+const EntriesContext = createContext<EntriesContextType | undefined>(undefined)
 
 const normalizeAnimeEntries = (raw: any): AnimeEntry[] => {
   if (!raw) return []
@@ -131,7 +138,119 @@ const normalizeAnimeEntries = (raw: any): AnimeEntry[] => {
   })
 }
 
-export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [token, setTokenState] = useState<string | null>(() =>
+    Storage.getToken()
+  )
+  const [user, setUserState] = useState<UserData | null>(() => {
+    const saved = Storage.getUser()
+    return saved ? JSON.parse(saved) : null
+  })
+  const clientId = import.meta.env.VITE_ANILIST_CLIENT_ID || ""
+
+  const setUser = useCallback((u: UserData | null) => {
+    setUserState(u)
+    if (u) {
+      Storage.setUser(u)
+    }
+  }, [])
+
+  const setToken = useCallback((t: string | null) => {
+    setTokenState(t)
+    if (t) {
+      Storage.setToken(t)
+    } else {
+      Storage.removeToken()
+      setUserState(null)
+    }
+  }, [])
+
+  const handleLogout = useCallback(() => {
+    setToken(null)
+  }, [setToken])
+
+  // Validate token and fetch user on load or when token changes
+  useEffect(() => {
+    if (!token) return
+
+    const controller = new AbortController()
+    const fetchUser = async () => {
+      try {
+        const response = await queryAniList(
+          GET_VIEWER_QUERY,
+          {},
+          token,
+          1,
+          controller.signal
+        )
+        if (response.data?.Viewer) {
+          const userData: UserData = {
+            id: response.data.Viewer.id,
+            name: response.data.Viewer.name,
+            avatar: response.data.Viewer.avatar?.large || "",
+            siteUrl: response.data.Viewer.siteUrl,
+            scoreFormat:
+              response.data.Viewer.mediaListOptions?.scoreFormat ||
+              "POINT_10_DECIMAL",
+            mediaListOptions: {
+              scoreFormat:
+                response.data.Viewer.mediaListOptions?.scoreFormat ||
+                "POINT_10_DECIMAL",
+            },
+          }
+          setUserState(userData)
+          Storage.setUser(userData)
+        }
+      } catch (error: any) {
+        if (error.name === "AbortError" || error.message === "canceled") return
+
+        const status = error.response?.status
+        const isAuthError =
+          status === 400 ||
+          status === 401 ||
+          error.message?.toLowerCase().includes("unauthorized") ||
+          error.message?.toLowerCase().includes("invalid token")
+
+        if (isAuthError) {
+          console.warn("AniList session invalid or expired:", error)
+          Storage.removeToken()
+          setTokenState(null)
+          setUserState(null)
+          toast.error("Your AniList session has expired. Please log in again.")
+        } else {
+          console.error("Failed to fetch user data:", error)
+          toast.error("Failed to fetch AniList profile. Check your connection.")
+        }
+      }
+    }
+
+    if (!user || !user.id) {
+      fetchUser()
+    }
+
+    return () => controller.abort()
+  }, [token, user])
+
+  const authValue = useMemo(
+    () => ({
+      token,
+      setToken,
+      user,
+      setUser,
+      clientId,
+      handleLogout,
+    }),
+    [token, setToken, user, setUser, clientId, handleLogout]
+  )
+
+  return (
+    <AuthContext.Provider value={authValue}>{children}</AuthContext.Provider>
+  )
+}
+
+export const EntriesProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [entries, setEntriesState] = useState<AnimeEntry[]>(() => {
@@ -139,15 +258,6 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
     return normalizeAnimeEntries(saved)
   })
   const [isStorageReady, setIsStorageReady] = useState(false)
-
-  const [token, setTokenState] = useState<string | null>(() =>
-    Storage.getToken()
-  )
-  const [user, setUser] = useState<UserData | null>(() => {
-    const saved = Storage.getUser()
-    return saved ? JSON.parse(saved) : null
-  })
-  const clientId = import.meta.env.VITE_ANILIST_CLIENT_ID || ""
 
   const [lastVisitedIndex, setLastVisitedIndexState] = useState<number>(() => {
     const saved = Storage.getLastIndex()
@@ -165,7 +275,11 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
     initAndMigrateStorage()
       .then((result) => {
         if (!isMounted) return
-        if (result?.entries && Array.isArray(result.entries) && result.entries.length > 0) {
+        if (
+          result?.entries &&
+          Array.isArray(result.entries) &&
+          result.entries.length > 0
+        ) {
           setEntriesState(normalizeAnimeEntries(result.entries))
         }
         setIsStorageReady(true)
@@ -190,65 +304,6 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
     window.addEventListener("beforeunload", handleBeforeUnload)
     return () => window.removeEventListener("beforeunload", handleBeforeUnload)
   }, [isStorageReady])
-
-  // Validate token and fetch user on load or when token changes
-  useEffect(() => {
-    if (!token) return
-
-    const controller = new AbortController()
-    const fetchUser = async () => {
-      try {
-        const response = await queryAniList(
-          GET_VIEWER_QUERY,
-          {},
-          token,
-          1,
-          controller.signal
-        )
-        if (response.data?.Viewer) {
-          const userData: UserData = {
-            id: response.data.Viewer.id,
-            name: response.data.Viewer.name,
-            avatar: response.data.Viewer.avatar?.large || "",
-            siteUrl: response.data.Viewer.siteUrl,
-            scoreFormat: response.data.Viewer.mediaListOptions?.scoreFormat || "POINT_10_DECIMAL",
-            mediaListOptions: {
-              scoreFormat: response.data.Viewer.mediaListOptions?.scoreFormat || "POINT_10_DECIMAL",
-            },
-          }
-          setUser(userData)
-          Storage.setUser(userData)
-        }
-      } catch (error: any) {
-        if (error.name === "AbortError" || error.message === "canceled") return
-
-        const status = error.response?.status
-        const isAuthError =
-          status === 400 ||
-          status === 401 ||
-          error.message?.toLowerCase().includes("unauthorized") ||
-          error.message?.toLowerCase().includes("invalid token")
-
-        if (isAuthError) {
-          console.warn("AniList session invalid or expired:", error)
-          Storage.removeToken()
-          setTokenState(null)
-          setUser(null)
-          toast.error("Your AniList session has expired. Please log in again.")
-        } else {
-          console.error("Failed to fetch user data:", error)
-          toast.error("Failed to fetch AniList profile. Check your connection.")
-        }
-      }
-    }
-
-    // Only fetch if user profile isn't loaded or user is empty
-    if (!user || !user.id) {
-      fetchUser()
-    }
-
-    return () => controller.abort()
-  }, [token, user])
 
   useEffect(() => {
     Storage.setLastIndex(lastVisitedIndex)
@@ -282,7 +337,9 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
   const updateEntry = useCallback(
     (index: number, updates: Partial<AnimeEntry>) => {
       setEntriesState((prev) =>
-        prev.map((entry, i) => (i === index ? { ...entry, ...updates } : entry))
+        prev.map((entry, i) =>
+          i === index ? { ...entry, ...updates } : entry
+        )
       )
     },
     []
@@ -307,57 +364,69 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
     []
   )
 
-  const setToken = useCallback((t: string | null) => {
-    setTokenState(t)
-    if (t) {
-      Storage.setToken(t)
-    } else {
-      Storage.removeToken()
-      setUser(null)
-    }
-  }, [])
-
-  const contextValue = useMemo(
+  const entriesValue = useMemo(
     () => ({
       entries,
       setEntries,
       updateEntry,
       updateSelection,
-      token,
-      setToken,
       lastVisitedIndex,
       setLastVisitedIndex,
-      user,
-      setUser: (u: UserData | null) => {
-        setUser(u)
-        if (u) Storage.setUser(u)
-      },
-      clientId,
+      isStorageReady,
     }),
     [
       entries,
       setEntries,
       updateEntry,
       updateSelection,
-      token,
-      setToken,
       lastVisitedIndex,
       setLastVisitedIndex,
-      user,
-      clientId,
+      isStorageReady,
     ]
   )
 
   return (
-    <ProgressContext.Provider value={contextValue}>
+    <EntriesContext.Provider value={entriesValue}>
       {children}
-    </ProgressContext.Provider>
+    </EntriesContext.Provider>
   )
 }
 
-export const useProgress = () => {
-  const context = useContext(ProgressContext)
-  if (!context)
-    throw new Error("useProgress must be used within a ProgressProvider")
+export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  return (
+    <AuthProvider>
+      <EntriesProvider>{children}</EntriesProvider>
+    </AuthProvider>
+  )
+}
+
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider")
+  }
   return context
+}
+
+export const useAnimeEntries = (): EntriesContextType => {
+  const context = useContext(EntriesContext)
+  if (!context) {
+    throw new Error("useAnimeEntries must be used within an EntriesProvider")
+  }
+  return context
+}
+
+// Backward-compatible combined hook
+export const useProgress = () => {
+  const auth = useAuth()
+  const entriesContext = useAnimeEntries()
+  return useMemo(
+    () => ({
+      ...auth,
+      ...entriesContext,
+    }),
+    [auth, entriesContext]
+  )
 }

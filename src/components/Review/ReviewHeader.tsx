@@ -1,99 +1,63 @@
 import { type FC } from "react"
-import { AlertCircle } from "lucide-react"
-import { ReviewSidebar } from "./ReviewSidebar"
+import { PageHeader } from "@/components/PageHeader"
+import { HelpBullets, HelpSteps } from "@/components/PageHelp"
 
-interface ReviewHeaderProps {
-  entriesCount: number
-  resolvedCount: number
-  entriesWithMissingScores: number
-  isFilterActive?: boolean
-  onToggleMissingFilter?: () => void
-  // Sidebar props
-  entries: any[]
-  currentIndex: number
-  onSelectEntry: (index: number) => void
-  onUpdateRating: (index: number, rating: number) => void
-  searchQuery?: string
-  onSearchChange?: (val: string) => void
-  onClearFilters?: () => void
-}
-
-export const ReviewHeader: FC<ReviewHeaderProps> = ({
-  entriesCount,
-  resolvedCount,
-  entriesWithMissingScores,
-  isFilterActive,
-  onToggleMissingFilter,
-  entries,
-  currentIndex,
-  onSelectEntry,
-  onUpdateRating,
-  searchQuery,
-  onSearchChange,
-  onClearFilters,
-}) => {
+export const ReviewHeader: FC = () => {
   return (
-    <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
-      <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-black tracking-tight uppercase sm:text-2xl md:text-3xl">
-            Review Matches
-          </h2>
-          <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">
-            Verify and match imported entries with AniList records.
-          </p>
-        </div>
-
-        {/* Mobile List Trigger */}
-        <div className="shrink-0 lg:hidden">
-          <ReviewSidebar
-            entries={entries}
-            currentIndex={currentIndex}
-            onSelectEntry={onSelectEntry}
-            onUpdateRating={onUpdateRating}
-            isMobile
-            searchQuery={searchQuery}
-            onSearchChange={onSearchChange}
-            isFilterActive={isFilterActive}
-            onClearFilters={onClearFilters}
-          />
-        </div>
-      </div>
-      <div className="flex w-full flex-col items-end gap-2 md:w-auto">
-        {entriesWithMissingScores > 0 && (
-          <button
-            onClick={onToggleMissingFilter}
-            className={`flex items-center gap-2 rounded-none px-3 py-1 transition-all hover:scale-105 active:scale-95 ${
-              isFilterActive
-                ? "bg-destructive text-white shadow-lg shadow-destructive/40"
-                : "bg-destructive/10 text-destructive hover:bg-destructive/20"
-            }`}
-          >
-            <AlertCircle
-              className={`h-3 w-3 ${isFilterActive ? "animate-pulse" : ""}`}
-            />
-            <span className="text-[10px] font-black tracking-widest uppercase">
-              {entriesWithMissingScores} Scores Missing
-            </span>
-          </button>
-        )}
-        <div className="flex w-full items-center gap-3 rounded-none border bg-card px-3 py-3 shadow-sm sm:w-auto sm:gap-4 sm:px-6">
-          <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase sm:text-xs">
-            Progress
-          </span>
-          <div className="h-1.5 min-w-15 flex-1 overflow-hidden rounded-none bg-muted sm:w-32 sm:flex-initial md:w-48">
-            <div
-              className="h-full bg-primary transition-all duration-700"
-              style={{
-                width: `${(resolvedCount / entriesCount) * 100}%`,
-              }}
-            />
-          </div>
-          <span className="font-mono text-xs font-bold sm:text-sm">
-            {resolvedCount}/{entriesCount}
-          </span>
-        </div>
-      </div>
+    <div>
+      <PageHeader
+        title="Review Matches"
+        description="Verify and match imported entries with AniList records."
+        backTo="/import"
+        helpSections={[
+          {
+            title: "About",
+            content: (
+              <p>
+                Review matches each title you imported against real AniList
+                records. This is where you confirm Zenith picked the right
+                show, choose sequels or related entries, and set the score,
+                status, and progress that will be synced.
+              </p>
+            ),
+          },
+          {
+            title: "What to do",
+            content: (
+              <HelpSteps>
+                <li>Check the suggested matches for the current title.</li>
+                <li>Tick the entries you actually watched.</li>
+                <li>Set score, status, and progress for each ticked entry.</li>
+                <li>Move to the next title with Next or Previous.</li>
+                <li>Press Finalize when everything is resolved to go to sync.</li>
+              </HelpSteps>
+            ),
+          },
+          {
+            title: "Tips",
+            content: (
+              <HelpBullets>
+                <li>
+                  You can tick several related entries for one title, such as
+                  sequels, movies, and OVAs.
+                </li>
+                <li>
+                  Use the sidebar, search, or missing scores filter to jump
+                  around, or open full details before deciding.
+                </li>
+                <li>
+                  Entries with a zero score are flagged as missing. Sync stays
+                  blocked until they are filled in.
+                </li>
+                <li>
+                  Your place is remembered, so you can leave and continue
+                  later from the same title.
+                </li>
+              </HelpBullets>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }

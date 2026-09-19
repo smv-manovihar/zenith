@@ -28,6 +28,8 @@ interface ReviewSidebarProps {
   onSearchChange?: (val: string) => void
   isFilterActive?: boolean
   onClearFilters?: () => void
+  selectedIndices?: Set<number>
+  onToggleSelectBatch?: (index: number) => void
 }
 
 type SidebarRowProps = {
@@ -35,6 +37,8 @@ type SidebarRowProps = {
   currentIndex: number
   onSelectEntry: (index: number) => void
   onUpdateRating: (index: number, rating: number) => void
+  selectedIndices?: Set<number>
+  onToggleSelectBatch?: (index: number) => void
 }
 
 const RowComponent = ({
@@ -44,6 +48,8 @@ const RowComponent = ({
   currentIndex,
   onSelectEntry,
   onUpdateRating,
+  selectedIndices,
+  onToggleSelectBatch,
 }: RowComponentProps<SidebarRowProps>) => {
   const entry = entries[index]
   if (!entry) return null
@@ -56,6 +62,8 @@ const RowComponent = ({
       isActive={entry.originalIndex === currentIndex}
       onClick={() => onSelectEntry(entry.originalIndex)}
       onUpdateRating={onUpdateRating}
+      isSelectedForBatch={selectedIndices?.has(entry.originalIndex)}
+      onToggleSelectBatch={onToggleSelectBatch}
       style={style}
     />
   )
@@ -71,6 +79,8 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
   onSearchChange,
   isFilterActive = false,
   onClearFilters,
+  selectedIndices,
+  onToggleSelectBatch,
 }) => {
   // 1. Create the list reference
   const listRef = useRef<any>(null)
@@ -81,14 +91,33 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
       currentIndex,
       onSelectEntry,
       onUpdateRating,
+      selectedIndices,
+      onToggleSelectBatch,
     }),
-    [entries, currentIndex, onSelectEntry, onUpdateRating]
+    [
+      entries,
+      currentIndex,
+      onSelectEntry,
+      onUpdateRating,
+      selectedIndices,
+      onToggleSelectBatch,
+    ]
   )
 
-  // Calculate local index within the potentially filtered entries list
+  // Calculate local index within the potentially filtered entries list with O(1) Map lookup
+  const indexToLocalMap = useMemo(() => {
+    const map = new Map<number, number>()
+    for (let i = 0; i < entries.length; i++) {
+      if (entries[i]?.originalIndex !== undefined) {
+        map.set(entries[i].originalIndex, i)
+      }
+    }
+    return map
+  }, [entries])
+
   const localIndex = useMemo(() => {
-    return entries.findIndex((e) => e.originalIndex === currentIndex)
-  }, [entries, currentIndex])
+    return indexToLocalMap.get(currentIndex) ?? -1
+  }, [indexToLocalMap, currentIndex])
 
   // 1. Force scroll on mount or when currentIndex changes
   const [hasScrolledInitial, setHasScrolledInitial] = useState(false)
@@ -118,7 +147,7 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
       setHasScrolledInitial(false)
       lastListInstance.current = null
     }
-  }, [currentIndex])
+  }, [localIndex, entries.length])
 
   // Effect for subsequent currentIndex changes
   useEffect(() => {
@@ -158,8 +187,8 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
               </div>
               <div className="flex items-center gap-2">
                 {isFilterActive && (
-                  <div className="flex items-center gap-1 text-[8px] text-destructive">
-                    <Filter className="h-2 w-2" />
+                  <div className="flex items-center gap-1 text-xs font-bold text-destructive">
+                    <Filter className="h-3 w-3" />
                     Missing Only
                   </div>
                 )}
@@ -188,13 +217,13 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
             {(isFilterActive || searchQuery) && entries.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center p-8 text-center">
                 <Search className="mb-2 h-8 w-8 text-muted-foreground/30" />
-                <p className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
+                <p className="text-xs font-black tracking-widest text-muted-foreground uppercase">
                   No matching entries
                 </p>
                 <Button
                   variant="link"
                   size="sm"
-                  className="mt-1 h-auto p-0 text-[10px] font-bold text-primary"
+                  className="mt-1 h-auto p-0 text-xs font-bold text-primary"
                   onClick={onClearFilters}
                 >
                   Clear all filters
@@ -227,8 +256,8 @@ export const ReviewSidebar: React.FC<ReviewSidebarProps> = ({
           </div>
           <div className="flex items-center gap-2">
             {isFilterActive && (
-              <div className="flex items-center gap-1 text-[9px] text-destructive animate-pulse">
-                <Filter className="h-2.5 w-2.5" />
+              <div className="flex items-center gap-1 text-xs font-bold text-destructive animate-pulse">
+                <Filter className="h-3 w-3" />
                 Missing
               </div>
             )}

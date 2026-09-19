@@ -1,6 +1,6 @@
 // Zenith PWA Service Worker
-const CACHE_VERSION = 'zenith-v1.0.0'
-const CACHE_NAME = `zenith-cache-${CACHE_VERSION}`
+const CACHE_VERSION = '1.1.0'
+const CACHE_NAME = `zenith-cache-v${CACHE_VERSION}`
 
 // Core static assets to pre-cache on install
 const PRECACHE_ASSETS = [
@@ -43,7 +43,8 @@ self.addEventListener('activate', (event) => {
   )
 })
 
-// Fetch Event - Network first with cache fallback for navigation, cache-first for hashed assets
+// Fetch Event - cache-first for immutable assets, network-first for navigations.
+// No background revalidation: a cache hit does NOT trigger a network fetch.
 self.addEventListener('fetch', (event) => {
   const { request } = event
 
@@ -57,38 +58,69 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Navigation requests: Network-first to always get latest index.html, fallback to cache
+  const url = new URL(request.url)
+
+  // Let cross-origin requests (CDN images, fonts, etc.) pass through untouched.
+  // Only handle same-origin requests.
+  if (url.origin !== self.location.origin) {
+    return
+  }
+
+  // Never intercept Vite dev / HMR requests, even if a stale worker lingers.
+  // These must always hit the dev server directly.
+  if (
+    url.pathname.startsWith('/src/') ||
+    url.pathname.startsWith('/@') ||
+    url.pathname.startsWith('/node_modules/') ||
+    url.pathname.includes('@vite') ||
+    url.pathname.includes('@react-refresh') ||
+    url.pathname.includes('__vite') ||
+    url.searchParams.has('t') ||
+    url.searchParams.has('v') ||
+    url.searchParams.has('import')
+  ) {
+    return
+  }
+
+  // Navigation requests (e.g. /sync via BrowserRouter): network-only with
+  // offline fallback. Deliberately NOT cached per-route — caching every SPA
+  // route (/sync, /import, ...) as separate entries is what real sites avoid,
+  // and cache.put() here is what surfaces as duplicate fetch rows in DevTools.
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.status === 200) {
-            const clone = response.clone()
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
-          }
-          return response
-        })
-        .catch(() => {
-          return caches.match(request).then((cached) => cached || caches.match('/'))
-        })
+      fetch(request).catch(() => {
+        return caches.match('/index.html').then((cached) => cached || caches.match('/'))
+      })
     )
     return
   }
 
-  // Static Assets (JS, CSS, Images, Fonts): Stale-while-revalidate
+  // All other same-origin GETs: only handle cacheable static files
+  // (hashed /assets/*, icons, manifest, precached shell).
+  // Anything else (SPA routes fetched via fetch(), API-like GETs) bypasses
+  // the worker entirely so it never shows up as an extra fetch/XHR row.
+  const isStaticFile =
+    url.pathname.startsWith('/assets/') ||
+    PRECACHE_ASSETS.includes(url.pathname) ||
+    /\.[a-z0-9]+$/i.test(url.pathname)
+  if (!isStaticFile) {
+    return
+  }
+
+  // Cache-first. Serve from cache if present, fetch + cache only on miss.
+  // A cache hit produces ZERO network requests (no background revalidation).
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
-      const fetchPromise = fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone()
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
-          }
-          return networkResponse
-        })
-        .catch(() => cachedResponse)
-
-      return cachedResponse || fetchPromise
+      if (cachedResponse) {
+        return cachedResponse
+      }
+      return fetch(request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone()
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
+        }
+        return networkResponse
+      })
     })
   )
 })

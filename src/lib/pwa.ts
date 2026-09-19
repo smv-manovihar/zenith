@@ -5,6 +5,20 @@ export function registerServiceWorker(): void {
     return
   }
 
+  // Only in production builds — real sites don't run the SW on localhost/dev,
+  // where it would intercept Vite HMR and show extra fetches in DevTools.
+  if (!import.meta.env.PROD) {
+    // Clean up any SW left over from before this guard existed.
+    // Otherwise the stale worker keeps intercepting dev requests
+    // (gear icon + duplicate fetch rows) until manually unregistered.
+    navigator.serviceWorker.getRegistrations?.().then((registrations) => {
+      for (const registration of registrations) {
+        registration.unregister()
+      }
+    })
+    return
+  }
+
   // Register service worker on window load
   window.addEventListener('load', () => {
     navigator.serviceWorker

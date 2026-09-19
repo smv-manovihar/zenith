@@ -1,6 +1,6 @@
-import React from "react"
+import React, { memo } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
-import { useProgress } from "./ProgressProvider"
+import { useAuth } from "./ProgressProvider"
 import { Button } from "@/components/ui/button"
 import {
   LogOut,
@@ -28,8 +28,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-export const Navbar: React.FC = () => {
-  const { token, setToken, user } = useProgress()
+export const Navbar: React.FC = memo(() => {
+  const { token, setToken, user } = useAuth()
   const { theme, setTheme } = useTheme()
   const location = useLocation()
   const navigate = useNavigate()
@@ -90,7 +90,7 @@ export const Navbar: React.FC = () => {
                     >
                       <span
                         className={cn(
-                          "flex h-6 w-6 items-center justify-center rounded-none border text-[10px]",
+                          "flex h-6 w-6 items-center justify-center rounded-none border text-xs font-bold",
                           isActive
                             ? "border-primary bg-primary text-primary-foreground"
                             : isPast
@@ -331,7 +331,7 @@ export const Navbar: React.FC = () => {
                         >
                           <span
                             className={cn(
-                              "flex h-5 w-5 items-center justify-center rounded-none border text-[9px]",
+                              "flex h-5 w-5 items-center justify-center rounded-none border text-xs font-bold",
                               isActive
                                 ? "border-primary bg-primary text-primary-foreground"
                                 : isPast
@@ -366,7 +366,7 @@ export const Navbar: React.FC = () => {
       </div>
     </nav>
   )
-}
+})
 
 // Small helper for popover nav links
 function PopoverLink({

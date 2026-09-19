@@ -49,7 +49,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="text-[10px] font-bold tracking-[0.3em] text-muted-foreground uppercase"
+              className="text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase"
             >
               {message}
             </motion.p>

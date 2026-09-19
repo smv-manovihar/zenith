@@ -23,32 +23,31 @@ import {
   Upload,
   ClipboardList,
   Trash2,
-  Check,
   ArrowRight,
   FileText,
   AlertTriangle,
   Sparkles,
   Copy,
-  ChevronDown,
   Info,
-  Loader2,
 } from "lucide-react"
 import { toast } from "sonner"
 import {
-  type AniListScoreFormat,
   getAIPrompt,
   normalizeScoreToFormat,
   SCORE_FORMAT_OPTIONS,
   getScoreConfig,
 } from "@/lib/scoreFormat"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
-import { queryAniList, UPDATE_USER_SETTINGS } from "@/lib/anilist"
+  DuplicateModal,
+  type DuplicateResolution,
+  type DuplicateItem,
+} from "@/components/Import/DuplicateModal"
+import { PageHeader } from "@/components/PageHeader"
+import { HelpBullets, HelpSteps } from "@/components/PageHelp"
+import {
+  ScoreFormatSelector,
+  useScoreFormat,
+} from "@/components/ScoreFormatSelector"
 
 // ── AI platform icons ───────────────────────────────────────────────────
 const ChatGPTIcon = () => (
@@ -153,52 +152,15 @@ const Import: FC = () => {
   const [failedLines, setFailedLines] = useState<string[]>([])
   const [aiDialogOpen, setAiDialogOpen] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const { entries, setEntries, token, user, setUser } = useProgress()
+  const { entries, setEntries, token } = useProgress()
   const navigate = useNavigate()
-  const [isUpdatingFormat, setIsUpdatingFormat] = useState(false)
-
-  // Derive initial format from user's AniList preference
-  const [scoreFormat, setScoreFormat] = useState<AniListScoreFormat>(
-    (user?.scoreFormat as AniListScoreFormat) ?? "POINT_10_DECIMAL"
-  )
-
-  // Keep format in sync if user data loads after mount
-  useEffect(() => {
-    if (user?.scoreFormat) {
-      setScoreFormat(user.scoreFormat as AniListScoreFormat)
-    }
-  }, [user?.scoreFormat])
-
-  const handleScoreFormatChange = (newFormat: AniListScoreFormat) => {
-    setScoreFormat(newFormat)
-  }
-
-  const handleScoreFormatUpdate = async () => {
-    if (!token || !user || scoreFormat === user.scoreFormat) return
-
-    setIsUpdatingFormat(true)
-    try {
-      await queryAniList(
-        UPDATE_USER_SETTINGS,
-        { scoreFormat: scoreFormat },
-        token
-      )
-      toast.success(`Score format updated to ${scoreFormat} on AniList`)
-      // Update local state
-      setUser({
-        ...user,
-        scoreFormat: scoreFormat,
-        mediaListOptions: {
-          ...user.mediaListOptions,
-          scoreFormat: scoreFormat,
-        },
-      })
-    } catch (err: any) {
-      toast.error("Failed to update AniList settings: " + err.message)
-    } finally {
-      setIsUpdatingFormat(false)
-    }
-  }
+  const {
+    value: scoreFormat,
+    setValue: setScoreFormat,
+    serverValue: serverScoreFormat,
+    isApplying: isUpdatingFormat,
+    apply: handleScoreFormatUpdate,
+  } = useScoreFormat()
 
   useEffect(() => {
     if (!token) {
@@ -315,6 +277,90 @@ const Import: FC = () => {
     }
   }
 
+  const [duplicateModalOpen, setDuplicateModalOpen] = useState(false)
+  const [duplicateItems, setDuplicateItems] = useState<DuplicateItem[]>([])
+  const [pendingImportEntries, setPendingImportEntries] = useState<AnimeEntry[]>([])
+
+  const processImportEntries = (newEntries: AnimeEntry[], failed: string[]) => {
+    setFailedLines(failed)
+    if (newEntries.length === 0 && failed.length === 0) {
+      toast.error("No valid entries found.")
+      return
+    }
+
+    if (entries.length > 0 && newEntries.length > 0) {
+      const dups: DuplicateItem[] = []
+      for (const ne of newEntries) {
+        const match = entries.find(
+          (e) => e.name.toLowerCase().trim() === ne.name.toLowerCase().trim()
+        )
+        if (match) {
+          dups.push({
+            title: match.name,
+            existingRating: match.rating,
+            newRating: ne.rating,
+          })
+        }
+      }
+
+      if (dups.length > 0) {
+        setDuplicateItems(dups)
+        setPendingImportEntries(newEntries)
+        setDuplicateModalOpen(true)
+        if (failed.length > 0) {
+          toast.warning(`${failed.length} lines moved to unparsed.`)
+        }
+        return
+      }
+    }
+
+    setEntries([...entries, ...newEntries])
+    if (newEntries.length > 0) {
+      toast.success(`Loaded ${newEntries.length} entries.`)
+    }
+    if (failed.length > 0) {
+      toast.warning(`${failed.length} lines moved to unparsed.`)
+    }
+  }
+
+  const handleResolveDuplicates = (resolution: DuplicateResolution) => {
+    const updatedEntries = [...entries]
+    const entriesToAdd: AnimeEntry[] = []
+
+    for (const ne of pendingImportEntries) {
+      const matchIdx = updatedEntries.findIndex(
+        (e) => e.name.toLowerCase().trim() === ne.name.toLowerCase().trim()
+      )
+      if (matchIdx !== -1) {
+        if (resolution === "highest") {
+          if (ne.rating > updatedEntries[matchIdx].rating) {
+            updatedEntries[matchIdx] = {
+              ...updatedEntries[matchIdx],
+              rating: ne.rating,
+              originalLine: ne.originalLine,
+            }
+          }
+        } else if (resolution === "overwrite") {
+          updatedEntries[matchIdx] = {
+            ...updatedEntries[matchIdx],
+            rating: ne.rating,
+            originalLine: ne.originalLine,
+          }
+        }
+      } else {
+        entriesToAdd.push(ne)
+      }
+    }
+
+    setEntries([...updatedEntries, ...entriesToAdd])
+    setDuplicateModalOpen(false)
+    setPendingImportEntries([])
+    setDuplicateItems([])
+    toast.success(
+      `Merged ${pendingImportEntries.length} entries (${resolution} resolution).`
+    )
+  }
+
   const parseText = (content: string) => {
     setFailedLines([])
     let finalEntries: AnimeEntry[] = []
@@ -324,12 +370,7 @@ const Import: FC = () => {
     if (content.includes(",") && content.includes("\n")) {
       const result = parseCSV(content)
       if (result && result.entries.length > 0) {
-        finalEntries = result.entries
-        finalFailed = result.failed
-
-        setEntries(finalEntries)
-        setFailedLines(finalFailed)
-        toast.success(`Loaded ${finalEntries.length} entries via CSV.`)
+        processImportEntries(result.entries, result.failed)
         return
       }
     }
@@ -395,20 +436,7 @@ const Import: FC = () => {
       }
     }
 
-    if (finalEntries.length === 0 && finalFailed.length === 0) {
-      toast.error("No valid entries found.")
-      return
-    }
-
-    setEntries(finalEntries)
-    setFailedLines(finalFailed)
-
-    if (finalEntries.length > 0) {
-      toast.success(`Loaded ${finalEntries.length} entries.`)
-    }
-    if (finalFailed.length > 0) {
-      toast.warning(`${finalFailed.length} lines moved to unparsed.`)
-    }
+    processImportEntries(finalEntries, finalFailed)
   }
 
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -445,85 +473,96 @@ const Import: FC = () => {
   return (
     <>
       <div className="mx-auto w-full max-w-4xl animate-in space-y-6 px-1 pb-40 duration-500 fade-in slide-in-from-bottom-4 sm:space-y-8 sm:px-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-black tracking-tight uppercase sm:text-2xl md:text-3xl">
-              Zenith Import
-            </h2>
-            <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">
-              Import your anime lists via text or CSV to prepare for batch
-              synchronization.
-            </p>
-          </div>
-          {entries.length > 0 && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleClear}
-              className="w-full gap-2 rounded-none sm:w-auto"
-            >
-              <Trash2 className="h-4 w-4" />
-              Clear All
-            </Button>
-          )}
-        </div>
+        <PageHeader
+          title="Zenith Import"
+          description="Import your anime lists via text or CSV to prepare for batch synchronization."
+          hideBack
+          helpSections={[
+            {
+              title: "About",
+              content: (
+                <p>
+                  Import is the starting point of the Zenith flow. It turns a
+                  plain text or CSV anime list into structured entries you can
+                  review, match to AniList, and sync in bulk.
+                </p>
+              ),
+            },
+            {
+              title: "What to do",
+              content: (
+                <HelpSteps>
+                  <li>Paste your list or upload a .txt or .csv file.</li>
+                  <li>Messy list? Use Format with AI to clean it up first.</li>
+                  <li>Press Parse to extract titles and scores.</li>
+                  <li>Fix any lines shown under Unparsed.</li>
+                  <li>Press Review Entries to match them on AniList.</li>
+                </HelpSteps>
+              ),
+            },
+            {
+              title: "Tips",
+              content: (
+                <div className="space-y-3">
+                  <HelpBullets>
+                    <li>
+                      One title per line, for example{" "}
+                      <code>1. Cowboy Bebop (10)</code>.
+                    </li>
+                    <li>
+                      CSV with <code>Name</code> and <code>Score</code> columns.
+                    </li>
+                    <li>Plain title lists without scores are accepted too.</li>
+                  </HelpBullets>
+                  <p>
+                    Format with AI opens your preferred AI chat with a prompt
+                    tuned to your score format. Paste your raw list there,
+                    then copy the formatted result back here and parse it.
+                  </p>
+                  <p>
+                    The picker sets the format your scores are parsed into. If
+                    it differs from your AniList setting, press Save to AniList
+                    so synced scores display correctly.
+                  </p>
+                  <HelpBullets>
+                    <li>
+                      Importing again with the same titles asks how to resolve
+                      duplicates instead of creating copies.
+                    </li>
+                    <li>Nothing is written to AniList until the Sync step.</li>
+                  </HelpBullets>
+                </div>
+              ),
+            },
+          ]}
+          actions={
+            entries.length > 0 ? (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleClear}
+                className="gap-2 rounded-none"
+              >
+                <Trash2 className="h-4 w-4" />
+                Clear All
+              </Button>
+            ) : undefined
+          }
+        />
 
         {/* Score Format Selector */}
-        <div className="flex flex-wrap items-center gap-3 rounded-none border border-primary/10 bg-primary/5 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2 rounded-none border border-primary/10 bg-primary/5 px-4 py-3 sm:gap-3">
           <Info className="h-4 w-4 shrink-0 text-primary/60" />
-          <span className="text-xs font-medium text-muted-foreground">
-            Score format:
-          </span>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild disabled={isUpdatingFormat}>
-              <button
-                className={cn(
-                  "flex items-center gap-1.5 rounded-none border border-primary/20 bg-background px-2.5 py-1 text-xs font-black text-primary transition-colors hover:border-primary/40 hover:bg-primary/5",
-                  isUpdatingFormat && "cursor-not-allowed opacity-50"
-                )}
-              >
-                {isUpdatingFormat ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  formatLabel
-                )}
-                <ChevronDown className="h-3 w-3 opacity-60" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="rounded-none">
-              {SCORE_FORMAT_OPTIONS.map((opt) => (
-                <DropdownMenuItem
-                  key={opt.value}
-                  onClick={() => handleScoreFormatChange(opt.value)}
-                  className={
-                    opt.value === scoreFormat ? "font-bold text-primary" : ""
-                  }
-                >
-                  {opt.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {user?.scoreFormat && user.scoreFormat !== scoreFormat && (
-            <div className="flex animate-in items-center gap-2 fade-in slide-in-from-left-2">
-              <Button
-                size="sm"
-                className="h-7 w-7 rounded-none bg-emerald-500 p-0 text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-600"
-                onClick={handleScoreFormatUpdate}
-                disabled={isUpdatingFormat}
-              >
-                {isUpdatingFormat ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4" />
-                )}
-              </Button>
-              <span className="text-[10px] font-bold tracking-tight text-emerald-500 uppercase">
-                Apply to AniList
-              </span>
-            </div>
-          )}
+          <div className="min-w-0 flex-1 basis-48">
+            <ScoreFormatSelector
+              value={scoreFormat}
+              onChange={setScoreFormat}
+              serverValue={serverScoreFormat}
+              onApply={handleScoreFormatUpdate}
+              isApplying={isUpdatingFormat}
+              align="start"
+            />
+          </div>
         </div>
 
         <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
@@ -593,9 +632,9 @@ const Import: FC = () => {
                       <div
                         key={idx}
                         onClick={() => navigateToLine(line)}
-                        className="group/item flex min-w-0 cursor-pointer items-start gap-3 rounded-none border border-destructive/10 bg-background/50 p-3 font-mono text-[11px] text-destructive/80 shadow-sm transition-all hover:border-destructive/30 hover:bg-destructive/10 sm:text-xs"
+                        className="group/item flex min-w-0 cursor-pointer items-start gap-3 rounded-none border border-destructive/10 bg-background/50 p-3 font-mono text-xs text-destructive/80 shadow-sm transition-all hover:border-destructive/30 hover:bg-destructive/10"
                       >
-                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-destructive/20 text-[10px] font-bold transition-colors group-hover/item:bg-destructive/40">
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-destructive/20 text-xs font-bold transition-colors group-hover/item:bg-destructive/40">
                           {idx + 1}
                         </span>
                         <span className="min-w-0 flex-1 break-all whitespace-pre-wrap">
@@ -623,7 +662,7 @@ const Import: FC = () => {
                   <Upload className="h-5 w-5" />
                   Upload File
                 </CardTitle>
-                <CardDescription className="text-[10px] leading-tight font-medium">
+                <CardDescription className="text-xs leading-tight font-medium">
                   Upload a .txt or .csv file. Required columns:{" "}
                   <code className="rounded bg-primary/10 px-1 text-primary">
                     Name
@@ -647,7 +686,7 @@ const Import: FC = () => {
                     <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
                       Click or drag & drop
                     </p>
-                    <p className="mt-1 text-[10px] text-muted-foreground/60">
+                    <p className="mt-1 text-xs text-muted-foreground/60">
                       Supports .txt and .csv
                     </p>
                   </div>
@@ -687,7 +726,7 @@ const Import: FC = () => {
                 </span>
                 <span>{platform.name}</span>
                 {!platform.prefill && (
-                  <span className="ml-auto text-[9px] font-black tracking-widest uppercase opacity-40">
+                  <span className="ml-auto text-xs font-black tracking-widest uppercase opacity-40">
                     copies
                   </span>
                 )}
@@ -710,6 +749,17 @@ const Import: FC = () => {
         </DialogContent>
       </Dialog>
 
+      <DuplicateModal
+        open={duplicateModalOpen}
+        duplicates={duplicateItems}
+        onResolve={handleResolveDuplicates}
+        onCancel={() => {
+          setDuplicateModalOpen(false)
+          setPendingImportEntries([])
+          setDuplicateItems([])
+        }}
+      />
+
       <AnimatePresence>
         {entries.length > 0 && (
           <motion.div
@@ -726,19 +776,19 @@ const Import: FC = () => {
           >
             <div className="flex items-center justify-between px-1 sm:px-4">
               <div className="flex flex-col">
-                <p className="text-[7px] font-black tracking-[0.15em] text-muted-foreground uppercase sm:text-[9px] sm:tracking-[0.2em]">
+                <p className="text-xs font-black tracking-wider text-muted-foreground uppercase sm:tracking-widest">
                   Import Collection
                 </p>
-                <p className="text-[11px] font-black text-primary sm:text-sm">
+                <p className="text-xs font-black text-primary sm:text-sm">
                   {entries.length} Entries Ready
                 </p>
               </div>
               <div className="h-6 w-px bg-primary/10 sm:h-8" />
               <div className="flex flex-col text-right">
-                <p className="text-[7px] font-black tracking-[0.15em] text-muted-foreground uppercase sm:text-[9px] sm:tracking-[0.2em]">
+                <p className="text-xs font-black tracking-wider text-muted-foreground uppercase sm:tracking-widest">
                   Format
                 </p>
-                <p className="text-[11px] font-black text-foreground sm:text-sm">
+                <p className="text-xs font-black text-foreground sm:text-sm">
                   {formatLabel}
                 </p>
               </div>
@@ -747,7 +797,7 @@ const Import: FC = () => {
             <Button
               size="lg"
               onClick={() => navigate("/review")}
-              className="group h-9 w-full rounded-none bg-primary text-[9px] font-black tracking-wider uppercase shadow-2xl shadow-primary/30 transition-all hover:scale-[1.02] active:scale-95 sm:h-12 sm:text-xs sm:tracking-widest"
+              className="group h-10 w-full rounded-none bg-primary text-xs font-black tracking-wider uppercase shadow-2xl shadow-primary/30 transition-all hover:scale-[1.02] active:scale-95 sm:h-12 sm:tracking-widest"
             >
               Review Entries
               <ArrowRight className="ml-1.5 h-3.5 w-3.5 transition-transform group-hover:translate-x-1 sm:ml-2 sm:h-4 sm:w-4" />

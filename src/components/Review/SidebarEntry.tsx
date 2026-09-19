@@ -1,6 +1,7 @@
 import { memo, type CSSProperties } from "react"
 import { Star } from "lucide-react"
 import { NumberInput } from "@/components/NumberInput"
+import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 
 interface SidebarEntryProps {
@@ -9,11 +10,24 @@ interface SidebarEntryProps {
   isActive: boolean
   onClick: () => void
   onUpdateRating?: (index: number, val: number) => void
+  isSelectedForBatch?: boolean
+  onToggleSelectBatch?: (index: number) => void
   style?: CSSProperties
 }
 
 export const SidebarEntry = memo<SidebarEntryProps>(
-  ({ entry, idx, isActive, onClick, onUpdateRating, style }) => {
+  ({
+    entry,
+    idx,
+    isActive,
+    onClick,
+    onUpdateRating,
+    isSelectedForBatch,
+    onToggleSelectBatch,
+    style,
+  }) => {
+    const hasSelections = entry.selections && entry.selections.length > 0
+
     return (
       <div
         role="button"
@@ -26,7 +40,7 @@ export const SidebarEntry = memo<SidebarEntryProps>(
           }
         }}
         style={style}
-        className={`group flex w-full cursor-pointer items-center justify-between gap-4 rounded-none border p-4 text-left transition-all outline-none ${
+        className={`group flex w-full cursor-pointer items-center justify-between gap-3 rounded-none border p-3.5 text-left transition-all outline-none sm:gap-4 sm:p-4 ${
           isActive
             ? "border-primary/50 bg-primary/10 shadow-inner"
             : "border-transparent hover:bg-white/5"
@@ -41,7 +55,7 @@ export const SidebarEntry = memo<SidebarEntryProps>(
           <div className="mt-2 flex items-center gap-2">
             <div
               className={cn(
-                "flex items-center gap-1.5 rounded-none px-2 py-1 text-[10px] font-bold transition-all",
+                "flex items-center gap-1.5 rounded-none px-2 py-1 text-xs font-bold transition-all",
                 entry.rating === 0
                   ? "animate-pulse bg-destructive/10 text-destructive ring-1 ring-destructive/40"
                   : "bg-primary/10 text-primary"
@@ -66,13 +80,32 @@ export const SidebarEntry = memo<SidebarEntryProps>(
             </div>
           </div>
         </div>
-        <div className="shrink-0">
-          {entry.selections?.length > 0 ? (
-            <div className="flex h-5 w-5 items-center justify-center rounded-none bg-primary text-[10px] font-black text-white">
+
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          {hasSelections ? (
+            <div className="flex h-5 w-5 items-center justify-center rounded-none bg-primary text-xs font-black text-white">
               {entry.selections.length}
             </div>
           ) : (
             <div className="h-5 w-5 rounded-none border-2 border-white/10" />
+          )}
+
+          {onToggleSelectBatch && (
+            <div
+              className="flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Checkbox
+                checked={isSelectedForBatch ?? false}
+                onCheckedChange={() => onToggleSelectBatch(idx)}
+                disabled={!hasSelections}
+                aria-label={
+                  hasSelections
+                    ? `Select ${entry.name} for batch actions`
+                    : `${entry.name} has no selections`
+                }
+              />
+            </div>
           )}
         </div>
       </div>

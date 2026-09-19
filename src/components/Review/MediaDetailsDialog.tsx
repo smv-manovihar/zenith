@@ -1,4 +1,5 @@
-import { useState, type FC } from "react"
+import { useEffect, useState, type FC } from "react"
+import { motion } from "framer-motion"
 import {
   Dialog,
   DialogContent,
@@ -8,10 +9,9 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { getScoreStyles, sanitizeHtml, cn } from "@/lib/utils"
+import { getScoreStyles, sanitizeHtml } from "@/lib/utils"
 import {
   ChevronDown,
-  ChevronUp,
   Play,
   Calendar,
   Clock,
@@ -81,11 +81,40 @@ const AniListLogo = ({ className }: { className?: string }) => (
   </svg>
 )
 
+const stripHtml = (html: string) => html.replace(/<[^>]*>?/gm, "")
+
 export const MediaDetailsDialog: FC<MediaDetailsDialogProps> = ({
   media,
   onClose,
 }) => {
   const [showMore, setShowMore] = useState(false)
+  const [clamped, setClamped] = useState(true)
+
+  const handleToggleDescription = () => {
+    if (showMore) {
+      // Collapsing: keep text unclamped during the height animation so the
+      // collapse actually transitions, then re-apply the clamp (ellipsis)
+      // once the animation finishes.
+      setShowMore(false)
+    } else {
+      setClamped(false)
+      setShowMore(true)
+    }
+  }
+
+  const descriptionHtml = media
+    ? sanitizeHtml(media.description || "No description available.")
+        .replace(/(<br\s*\/?>\s*)+$/gi, "")
+        .trim() || "No description available."
+    : ""
+
+  const isExpandable = stripHtml(descriptionHtml).length > 140
+
+  // Reset when switching titles
+  useEffect(() => {
+    setShowMore(false)
+    setClamped(true)
+  }, [media?.id])
 
   return (
     <Dialog
@@ -94,6 +123,7 @@ export const MediaDetailsDialog: FC<MediaDetailsDialogProps> = ({
         if (!open) {
           onClose()
           setShowMore(false)
+          setClamped(true)
         }
       }}
     >
@@ -146,7 +176,7 @@ export const MediaDetailsDialog: FC<MediaDetailsDialogProps> = ({
                         {media.format && (
                           <Badge
                             variant="secondary"
-                            className="rounded-none bg-primary/10 px-2 py-0.5 text-[10px] font-black tracking-widest text-primary uppercase"
+                            className="rounded-none bg-primary/10 px-2 py-0.5 text-xs font-black tracking-widest text-primary uppercase"
                           >
                             {media.format}
                           </Badge>
@@ -154,7 +184,7 @@ export const MediaDetailsDialog: FC<MediaDetailsDialogProps> = ({
                         {media.averageScore > 0 && (
                           <Badge
                             variant="outline"
-                            className={`flex items-center gap-1 rounded-none border-0 px-2 py-0.5 text-[10px] font-black tracking-widest uppercase ${getScoreStyles(media.averageScore).bg} ${getScoreStyles(media.averageScore).color}`}
+                            className={`flex items-center gap-1 rounded-none border-0 px-2 py-0.5 text-xs font-black tracking-widest uppercase ${getScoreStyles(media.averageScore).bg} ${getScoreStyles(media.averageScore).color}`}
                           >
                             {getScoreStyles(media.averageScore).icon}
                             {media.averageScore}%
@@ -163,7 +193,7 @@ export const MediaDetailsDialog: FC<MediaDetailsDialogProps> = ({
                         {media.status && (
                           <Badge
                             variant="secondary"
-                            className="rounded-none px-2 py-0.5 text-[10px] font-black tracking-widest text-muted-foreground uppercase"
+                            className="rounded-none px-2 py-0.5 text-xs font-black tracking-widest text-muted-foreground uppercase"
                           >
                             {media.status.replace(/_/g, " ")}
                           </Badge>
@@ -173,7 +203,7 @@ export const MediaDetailsDialog: FC<MediaDetailsDialogProps> = ({
                       {/* Quick stats row — always visible */}
                       <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 sm:justify-start">
                         {(media.season || media.seasonYear) && (
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase">
+                          <span className="flex items-center gap-1 text-xs font-bold text-muted-foreground uppercase">
                             <Calendar className="h-3 w-3" />
                             {[media.season, media.seasonYear]
                               .filter(Boolean)
@@ -181,19 +211,19 @@ export const MediaDetailsDialog: FC<MediaDetailsDialogProps> = ({
                           </span>
                         )}
                         {media.episodes && (
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase">
+                          <span className="flex items-center gap-1 text-xs font-bold text-muted-foreground uppercase">
                             <Play className="h-3 w-3" />
                             {media.episodes} eps
                           </span>
                         )}
                         {media.duration && (
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase">
+                          <span className="flex items-center gap-1 text-xs font-bold text-muted-foreground uppercase">
                             <Clock className="h-3 w-3" />
                             {media.duration} min
                           </span>
                         )}
                         {media.popularity > 0 && (
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase">
+                          <span className="flex items-center gap-1 text-xs font-bold text-muted-foreground uppercase">
                             <Users className="h-3 w-3" />
                             {media.popularity.toLocaleString()}
                           </span>
@@ -281,7 +311,7 @@ export const MediaDetailsDialog: FC<MediaDetailsDialogProps> = ({
                     {media.genres.slice(0, 6).map((g: string) => (
                       <span
                         key={g}
-                        className="rounded-none border border-primary/10 bg-primary/5 px-2 py-0.5 text-[10px] font-bold text-primary/80"
+                        className="rounded-none border border-primary/10 bg-primary/5 px-2 py-0.5 text-xs font-bold text-primary/80"
                       >
                         {g}
                       </span>
@@ -323,39 +353,57 @@ export const MediaDetailsDialog: FC<MediaDetailsDialogProps> = ({
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase opacity-60">
-                      Synopsis
-                    </h4>
-                    <button
-                      className="flex items-center gap-1.5 text-[10px] font-black tracking-widest text-primary uppercase transition-colors hover:text-primary/70"
-                      onClick={() => setShowMore((p) => !p)}
+                <div className="space-y-1.5">
+                  <h4 className="text-xs font-black tracking-[0.2em] text-muted-foreground uppercase opacity-60">
+                    Synopsis
+                  </h4>
+                  <div>
+                    <motion.div
+                      initial={false}
+                      animate={{
+                        height: !isExpandable || showMore ? "auto" : "5.75rem",
+                      }}
+                      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                      onAnimationComplete={() => {
+                        if (!showMore) setClamped(true)
+                      }}
+                      className="overflow-hidden"
                     >
-                      {showMore ? (
-                        <ChevronUp className="h-3 w-3" />
-                      ) : (
-                        <ChevronDown className="h-3 w-3" />
-                      )}
-                      {showMore ? "Less" : "More"}
-                    </button>
-                  </div>
-                  <div
-                    className={cn(
-                      "text-sm leading-relaxed whitespace-pre-line text-muted-foreground/90 transition-all duration-500",
-                      !showMore && "line-clamp-4"
+                      <div
+                        className={`text-sm leading-relaxed whitespace-pre-line text-muted-foreground/90 ${
+                          clamped && !showMore && isExpandable
+                            ? "line-clamp-4 overflow-hidden text-ellipsis"
+                            : ""
+                        }`}
+                        dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+                      />
+                    </motion.div>
+
+                    {isExpandable && (
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={handleToggleDescription}
+                          className="group inline-flex cursor-pointer items-center gap-1 text-xs font-black tracking-widest text-primary uppercase transition-colors hover:text-primary/70 focus:outline-none"
+                        >
+                          <span>{showMore ? "Less" : "More"}</span>
+                          <motion.span
+                            initial={false}
+                            animate={{ rotate: showMore ? 180 : 0 }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            className="inline-flex items-center"
+                          >
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          </motion.span>
+                        </button>
+                      </div>
                     )}
-                    dangerouslySetInnerHTML={{
-                      __html: sanitizeHtml(
-                        media.description || "No description available."
-                      ),
-                    }}
-                  />
+                  </div>
                 </div>
 
                 {/* Relations */}
                 <div className="space-y-3">
-                  <h4 className="text-[10px] font-black tracking-[0.2em] text-muted-foreground uppercase opacity-60">
+                  <h4 className="text-xs font-black tracking-[0.2em] text-muted-foreground uppercase opacity-60">
                     Relations
                   </h4>
                   {media.relations?.edges?.filter(
@@ -394,10 +442,10 @@ export const MediaDetailsDialog: FC<MediaDetailsDialogProps> = ({
 function InfoCell({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-0.5">
-      <p className="text-[9px] font-black tracking-[0.15em] text-muted-foreground uppercase opacity-60">
+      <p className="text-xs font-black tracking-wider text-muted-foreground uppercase opacity-60">
         {label}
       </p>
-      <p className="text-[11px] font-semibold text-foreground capitalize">
+      <p className="text-xs font-semibold text-foreground capitalize">
         {value}
       </p>
     </div>
@@ -417,17 +465,17 @@ function RelationCard({ edge }: { edge: any }) {
         <div className="absolute top-2 right-2">
           <Badge
             variant="secondary"
-            className="rounded-none bg-background/80 px-1.5 py-0 text-[8px] font-black uppercase backdrop-blur-xs"
+            className="rounded-none bg-background/80 px-1.5 py-0 text-xs font-black uppercase backdrop-blur-xs"
           >
             {node.format}
           </Badge>
         </div>
       </div>
       <div className="min-w-0 space-y-0.5">
-        <p className="text-[9px] font-black tracking-widest text-primary uppercase opacity-70">
+        <p className="text-xs font-black tracking-wider text-primary uppercase opacity-70">
           {relationType.replace(/_/g, " ")}
         </p>
-        <p className="truncate text-[10px] font-bold leading-tight">
+        <p className="truncate text-xs font-bold leading-tight">
           {node.title.english || node.title.romaji}
         </p>
       </div>
